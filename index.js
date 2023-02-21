@@ -1,12 +1,12 @@
 const colors = [
   "",
+  "lightgray",
   "red",
   "orange",
   "yellow",
   "green",
   "blue",
   "purple",
-  "lightgray",
   "pink",
   "cyan",
 ];
@@ -438,8 +438,7 @@ const tests = [
   ],
 ];
 
-// generate test cases
-function genTests() {
+function generateTests() {
   const tests = [];
   for (let i = 0; i < 20; i++) {
     const coordinates = [];
@@ -454,7 +453,6 @@ function genTests() {
   }
   console.log("[" + tests.join("], [") + "]");
 }
-// display
 function display(coor, max, n) {
   const groups = groupbyDistance(coor, max, n);
   const ul = document.createElement("ul");
@@ -471,7 +469,6 @@ function display(coor, max, n) {
   document.body.appendChild(ul);
   document.body.appendChild(document.createElement("br"));
 }
-// visualise the graph
 function visualiseCoordinates(coordinates, groups) {
   const [y, x] = coordinates.reduce(
     (max, coordinate) => {
@@ -513,12 +510,12 @@ function visualiseCoordinates(coordinates, groups) {
 }
 
 // display all
-// tests.forEach((coor) => {
-//   display(coor, 4, 5);
-// });
+tests.forEach((coor) => {
+  display(coor, 4, 5);
+});
 
 // sample with the first test
-display(tests[0], 4, 5);
+// display(tests[0], 4, 8);
 
 // Each job is represented by an array of coordinates eg. [x, y]
 // There are n number of technicians that can complete those jobs,
@@ -528,13 +525,61 @@ display(tests[0], 4, 5);
 // give me an algorithm to calculate that in javascript
 
 function groupbyDistance(coordinates, max, n) {
+  const [y, x] = coordinates.reduce(
+    (max, coordinate) => {
+      return [Math.max(max[0], coordinate[0]), Math.max(max[1], coordinate[1])];
+    },
+    [0, 0]
+  );
   const m = coordinates.length;
-  console.log(m);
   const groups = Array.from(Array(n), () => []);
-
-  coordinates.forEach((coordinate, i) => {
-    groups[i % groups.length].push(coordinate);
+  const technicians = Array.from(Array(n), () => {
+    return {
+      maxCap: false,
+      curLocation: [Math.floor(y / 2), Math.floor(x / 2)],
+    };
   });
+  const added = [...Array(m)].map(() => false);
+
+  let counter = 0;
+  let curTech = 0;
+
+  while (counter < m) {
+    // if (!technicians.maxCap) {
+    const i = getClosestJob(
+      technicians[curTech].curLocation,
+      coordinates,
+      added
+    );
+    groups[curTech].push(coordinates[i]);
+    technicians[curTech].curLocation = coordinates[i];
+    counter++;
+    // }
+    curTech = (curTech + 1) % n;
+  }
 
   return groups;
+}
+
+function getClosestJob(technician, coordinates, added) {
+  let minDistance = Number.MAX_SAFE_INTEGER;
+  const closestIndex = coordinates.reduce((minIndex, coordinate, i) => {
+    if (added[i]) return minIndex;
+    let curDistance = getDistance(technician, coordinate);
+    if (curDistance < minDistance) {
+      minDistance = curDistance;
+      return i;
+    } else {
+      return minIndex;
+    }
+  }, -1);
+  if (closestIndex === -1) {
+    return -1;
+  }
+  added[closestIndex] = true;
+  return closestIndex;
+}
+
+function getDistance(a, b) {
+  return Math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2);
 }
