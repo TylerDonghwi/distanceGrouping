@@ -479,6 +479,7 @@ function display(coor, i, max, n, x) {
   addLi(ul, `Index: ${i}, Num jobs: ${coor.length}`);
   addLi(ul, `MaxCap: ${max}, Num Technicians: ${n}`);
   addLi(ul, `Function Number: ${x}`);
+  addLi(ul, coor.map((element) => `[${element[0]}, ${element[1]}]`).join(", "));
   addLi(ul, "");
 
   groups
@@ -488,14 +489,18 @@ function display(coor, i, max, n, x) {
     .forEach((group, i) => {
       addLi(
         ul,
-        `${i === groups.length - 1 ? "Overflow" : colors[i + 3]}: ${
-          travels[i]
-        } ${group}`
+        i === groups.length - 1
+          ? "overflow: 0, None Assigned"
+          : `${colors[i + 3]}: ${Math.floor(travels[i])}, ${group}`
       );
     });
+
+  addLi(ul, "");
   addLi(
     ul,
-    `Total Travel: ${travels.reduce((total, travel) => total + travel, 0)}`
+    `Total Travel: ${Math.floor(
+      travels.reduce((total, travel) => total + travel, 0)
+    )}`
   );
   parent.appendChild(ul);
   document.body.appendChild(parent);
@@ -517,8 +522,8 @@ function visualiseCoordinates(coordinates, groups, parent) {
 
   const table = document.createElement("table");
   table.style.marginBottom = "20px";
-  table.style.width = "70vw";
-  table.style.height = "47.5vh";
+  table.style.minWidth = "65vw";
+  table.style.minHeight = "47.5vh";
 
   for (let i = 0; i <= x; i++) {
     const row = document.createElement("tr");
@@ -541,6 +546,7 @@ function addLi(parent, text) {
   li.textContent = text;
   parent.appendChild(li);
 }
+
 //
 // Testing Zone
 //
@@ -596,7 +602,6 @@ function getFurthestJob(technician, coordinates, added) {
     return -1;
   }
   added[furthestIndex] = true;
-  technician.travel += maxDistance;
   return furthestIndex;
 }
 
