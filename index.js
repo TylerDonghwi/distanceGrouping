@@ -1,6 +1,7 @@
 const colors = [
   "",
   "lightgray",
+  "black",
   "red",
   "orange",
   "yellow",
@@ -465,7 +466,9 @@ function display(coor, i, max, n) {
     )
     .forEach((group, i) => {
       const li = document.createElement("li");
-      li.textContent = `${colors[i + 2]}: ${group}`;
+      li.textContent = `${
+        i === groups.length - 1 ? "Overflow" : colors[i + 3]
+      }: ${group}`;
       ul.appendChild(li);
     });
   visualiseCoordinates(coor, groups);
@@ -488,7 +491,7 @@ function visualiseCoordinates(coordinates, groups) {
 
   groups.forEach((group, i) => {
     group.forEach((location) => {
-      array[location[1]][location[0]] = i + 2;
+      array[location[1]][location[0]] = i === groups.length - 1 ? 1 : i + 3;
     });
   });
 
@@ -537,7 +540,7 @@ function groupbyDistance(coordinates, max, n) {
     [0, 0]
   );
   const m = coordinates.length;
-  const groups = Array.from(Array(n), () => []);
+  const groups = Array.from(Array(n + 1), () => []);
   const technicians = Array.from(Array(n), () => {
     return {
       maxCap: false,
@@ -549,19 +552,27 @@ function groupbyDistance(coordinates, max, n) {
   let counter = 0;
   let curTech = 0;
 
-  while (counter < m) {
-    // if (!technicians.maxCap) {
-    const i = getClosestJob(
-      technicians[curTech].curLocation,
-      coordinates,
-      added
-    );
-    groups[curTech].push(coordinates[i]);
-    technicians[curTech].curLocation = coordinates[i];
-    counter++;
-    // }
+  while (counter < m && technicians.some((tech) => !tech.maxCap)) {
+    if (!technicians.maxCap) {
+      const i = getClosestJob(
+        technicians[curTech].curLocation,
+        coordinates,
+        added
+      );
+      groups[curTech].push(coordinates[i]);
+      if (groups[curTech].length === max) {
+        technicians[curTech].maxCap = true;
+      }
+      technicians[curTech].curLocation = coordinates[i];
+      counter++;
+    }
     curTech = (curTech + 1) % n;
   }
+  added.forEach((el, i) => {
+    if (!el) {
+      groups[n].push(coordinates[i]);
+    }
+  });
 
   return groups;
 }
