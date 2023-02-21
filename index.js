@@ -456,11 +456,15 @@ function generateTests() {
   console.log("[" + tests.join("], [") + "]");
 }
 function display(coor, i, max, n, x) {
+  const parent = document.createElement("div");
+  parent.style.display = "flex";
+
   const groups = meths[x](coor, max, n);
   const ul = document.createElement("ul");
   const li = document.createElement("li");
-  li.textContent = `Num jobs: ${coor.length}, Index: ${i}, MaxCap: ${max}, Num Technicians: ${n}`;
+  li.textContent = `Index: ${i}, Num jobs: ${coor.length}, MaxCap: ${max}, Num Technicians: ${n}`;
   ul.appendChild(li);
+
   groups
     .map((group) =>
       group.map((element) => `[${element[0]}, ${element[1]}]`).join(", ")
@@ -472,11 +476,11 @@ function display(coor, i, max, n, x) {
       }: ${group}`;
       ul.appendChild(li);
     });
-  visualiseCoordinates(coor, groups);
-  document.body.appendChild(ul);
-  document.body.appendChild(document.createElement("br"));
+  visualiseCoordinates(coor, groups, parent);
+  parent.appendChild(ul);
+  document.body.appendChild(parent);
 }
-function visualiseCoordinates(coordinates, groups) {
+function visualiseCoordinates(coordinates, groups, parent) {
   const [y, x] = coordinates.reduce(
     (max, coordinate) => {
       return [Math.max(max[0], coordinate[0]), Math.max(max[1], coordinate[1])];
@@ -497,6 +501,7 @@ function visualiseCoordinates(coordinates, groups) {
   });
 
   const table = document.createElement("table");
+  table.style.marginBottom = "20px";
 
   for (let i = 0; i <= x; i++) {
     const row = document.createElement("tr");
@@ -507,13 +512,11 @@ function visualiseCoordinates(coordinates, groups) {
       cell.style.textAlign = "center";
       cell.style.backgroundColor = colors[array[i][j]];
       cell.style.border = "solid 1px black";
-      cell.style.width = "50px";
-      cell.style.height = "30px";
       row.appendChild(cell);
     }
     table.appendChild(row);
   }
-  document.body.appendChild(table);
+  parent.appendChild(table);
 }
 
 // display all
