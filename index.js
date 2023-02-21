@@ -455,26 +455,27 @@ function generateTests() {
   }
   console.log("[" + tests.join("], [") + "]");
 }
+
 function display(coor, i, max, n, x) {
   const parent = document.createElement("div");
   parent.style.display = "flex";
 
   const groups = meths[x](coor, max, n);
   const ul = document.createElement("ul");
-  const li = document.createElement("li");
-  li.textContent = `Index: ${i}, Num jobs: ${coor.length}, MaxCap: ${max}, Num Technicians: ${n}`;
-  ul.appendChild(li);
+  addLi(ul, `Index: ${i}, Num jobs: ${coor.length}`);
+  addLi(ul, `MaxCap: ${max}, Num Technicians: ${n}`);
+  addLi(ul, `Function Number: ${x}`);
+  addLi(ul, "");
 
   groups
     .map((group) =>
       group.map((element) => `[${element[0]}, ${element[1]}]`).join(", ")
     )
     .forEach((group, i) => {
-      const li = document.createElement("li");
-      li.textContent = `${
-        i === groups.length - 1 ? "Overflow" : colors[i + 3]
-      }: ${group}`;
-      ul.appendChild(li);
+      addLi(
+        ul,
+        `${i === groups.length - 1 ? "Overflow" : colors[i + 3]}: ${group}`
+      );
     });
   visualiseCoordinates(coor, groups, parent);
   parent.appendChild(ul);
@@ -502,6 +503,8 @@ function visualiseCoordinates(coordinates, groups, parent) {
 
   const table = document.createElement("table");
   table.style.marginBottom = "20px";
+  table.style.width = "70vw";
+  table.style.height = "47.5vh";
 
   for (let i = 0; i <= x; i++) {
     const row = document.createElement("tr");
@@ -512,14 +515,21 @@ function visualiseCoordinates(coordinates, groups, parent) {
       cell.style.textAlign = "center";
       cell.style.backgroundColor = colors[array[i][j]];
       cell.style.border = "solid 1px black";
+      cell.style.fontSize = "15px";
       row.appendChild(cell);
     }
     table.appendChild(row);
   }
   parent.appendChild(table);
 }
-
-// display all
+function addLi(parent, text) {
+  const li = document.createElement("li");
+  li.textContent = text;
+  parent.appendChild(li);
+}
+//
+// Testing Zone
+//
 tests.forEach((coor, i) => {
   display(coor, i, 4, 8, 0);
   display(coor, i, 4, 8, 1);
@@ -531,6 +541,52 @@ tests.forEach((coor, i) => {
 
 // display(tests[0], 0, 1, 8, 0);
 // display(tests[0], 0, 2, 8, 0);
+
+//
+// UTILITY FUNCTIONS
+//
+function getClosestJob(technician, coordinates, added) {
+  let minDistance = Number.MAX_SAFE_INTEGER;
+  const closestIndex = coordinates.reduce((minIndex, coordinate, i) => {
+    if (added[i]) return minIndex;
+    let curDistance = getDistance(technician, coordinate);
+    if (curDistance < minDistance) {
+      minDistance = curDistance;
+      return i;
+    } else {
+      return minIndex;
+    }
+  }, -1);
+  if (closestIndex === -1) {
+    return -1;
+  }
+  added[closestIndex] = true;
+  return closestIndex;
+}
+function getFurthestJob(technician, coordinates, added) {
+  let maxDistance = Number.MIN_SAFE_INTEGER;
+  const furthestIndex = coordinates.reduce((maxIndex, coordinate, i) => {
+    if (added[i]) return maxIndex;
+    let curDistance = getDistance(technician, coordinate);
+    if (curDistance > maxDistance) {
+      maxDistance = curDistance;
+      return i;
+    } else {
+      return maxIndex;
+    }
+  }, -1);
+  if (furthestIndex === -1) {
+    return -1;
+  }
+  added[furthestIndex] = true;
+  return furthestIndex;
+}
+
+function getDistance(a, b) {
+  return Math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2);
+}
+
+// Assigning Functions
 
 // O(n^2)
 // BFS approach
@@ -578,47 +634,6 @@ function groupbyDistance(coordinates, max, n) {
   });
 
   return groups;
-}
-
-function getClosestJob(technician, coordinates, added) {
-  let minDistance = Number.MAX_SAFE_INTEGER;
-  const closestIndex = coordinates.reduce((minIndex, coordinate, i) => {
-    if (added[i]) return minIndex;
-    let curDistance = getDistance(technician, coordinate);
-    if (curDistance < minDistance) {
-      minDistance = curDistance;
-      return i;
-    } else {
-      return minIndex;
-    }
-  }, -1);
-  if (closestIndex === -1) {
-    return -1;
-  }
-  added[closestIndex] = true;
-  return closestIndex;
-}
-function getFurthestJob(technician, coordinates, added) {
-  let maxDistance = Number.MIN_SAFE_INTEGER;
-  const furthestIndex = coordinates.reduce((maxIndex, coordinate, i) => {
-    if (added[i]) return maxIndex;
-    let curDistance = getDistance(technician, coordinate);
-    if (curDistance > maxDistance) {
-      maxDistance = curDistance;
-      return i;
-    } else {
-      return maxIndex;
-    }
-  }, -1);
-  if (furthestIndex === -1) {
-    return -1;
-  }
-  added[furthestIndex] = true;
-  return furthestIndex;
-}
-
-function getDistance(a, b) {
-  return Math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2);
 }
 
 // O(n^2)
