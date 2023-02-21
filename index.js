@@ -3,10 +3,22 @@
 // There are n number of technicians that can complete those jobs,
 // There is a limit to a number of jobs that a technician can do, suppose it is defined as max,
 // We want to assign each job to a technician such that the total distance traveled by technicians is minimum
-//
+
 // Ideally we want every technicians to have similar number of jobs
 // If there is no more capacity left for any of the technicians, add the rest of the unassigned jobs to overflow and return as another group
 // Every technician starts at the center of the map (arbitrary)
+
+// Suppose there will be around 30 jobs
+// O(n) = 30
+// O(n^2) = 900
+// O(n^3) = 27000
+// O(n^4) = 810000
+// O(n!) = 2.65e32
+// from O(n) to O(n^3) will be acceptable
+
+// Suppose there are m jobs and n technicians, there are m! / (n! * (m - n)!) potential start points
+// if n = 7 and m = 30, there will be 2035800 potential combinations of start points
+// Need to find the best start points without having to iterate all of them
 
 const colors = [
   "",
@@ -1347,9 +1359,11 @@ const tests = [
     [12, 8],
   ],
 ];
-const meths = [groupbyDistance, groupStartFarEnd];
+const meths = [groupStartClose, groupStartFarEnd, groupDFS];
 
+// console.time("timer");
 test(tests);
+// console.timeEnd("timer");
 
 //
 // Display Zone
@@ -1550,7 +1564,7 @@ function getXY(coordinates) {
 // O(n^2)
 // BFS approach
 // Start From the Center and get the closest job then from that location find the nearest jobs
-function groupbyDistance(coordinates, max, n) {
+function groupStartClose(coordinates, max, n) {
   const { m, groups, technicians, added } = initialSetUp(coordinates, n);
 
   let counter = 0;
@@ -1616,5 +1630,31 @@ function groupStartFarEnd(coordinates, max, n) {
       groups[n].push(coordinates[i]);
     }
   });
+  return { groups, travels: technicians.map((tech) => tech.travel) };
+}
+
+// O(n^2)
+// DFS approach
+function groupDFS(coordinates, max, n) {
+  const { m, groups, technicians, added } = initialSetUp(coordinates, n);
+
+  let counter = 0;
+  let curTech = 0;
+
+  while (counter < m && curTech < n - 1) {
+    while (groups[curTech].length < max && counter < m) {
+      const i = getClosestJob(technicians[curTech], coordinates, added);
+      groups[curTech].push(coordinates[i]);
+      technicians[curTech].curLocation = coordinates[i];
+      counter++;
+    }
+    curTech++;
+  }
+  added.forEach((el, i) => {
+    if (!el) {
+      groups[n].push(coordinates[i]);
+    }
+  });
+
   return { groups, travels: technicians.map((tech) => tech.travel) };
 }
