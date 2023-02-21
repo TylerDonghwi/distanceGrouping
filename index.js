@@ -453,16 +453,19 @@ function generateTests() {
   }
   console.log("[" + tests.join("], [") + "]");
 }
-function display(coor, max, n) {
+function display(coor, i, max, n) {
   const groups = groupbyDistance(coor, max, n);
   const ul = document.createElement("ul");
+  const li = document.createElement("li");
+  li.textContent = `Num jobs: ${coor.length}, Index: ${i}, MaxCap: ${max}, Num Technicians: ${n}`;
+  ul.appendChild(li);
   groups
     .map((group) =>
       group.map((element) => `[${element[0]}, ${element[1]}]`).join(", ")
     )
-    .forEach((group) => {
+    .forEach((group, i) => {
       const li = document.createElement("li");
-      li.textContent = group;
+      li.textContent = `${colors[i + 2]}: ${group}`;
       ul.appendChild(li);
     });
   visualiseCoordinates(coor, groups);
@@ -510,8 +513,9 @@ function visualiseCoordinates(coordinates, groups) {
 }
 
 // display all
-tests.forEach((coor) => {
-  display(coor, 4, 5);
+tests.forEach((coor, i) => {
+  display(coor, i, 4, 5);
+  display(coor, i, 4, 6);
 });
 
 // sample with the first test
@@ -524,6 +528,7 @@ tests.forEach((coor) => {
 // Ideally we want every technicians to have similar number of jobs
 // give me an algorithm to calculate that in javascript
 
+// O(n^2)
 function groupbyDistance(coordinates, max, n) {
   const [y, x] = coordinates.reduce(
     (max, coordinate) => {
