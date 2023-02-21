@@ -1341,21 +1341,7 @@ const tests = [
 ];
 const meths = [groupbyDistance, groupStartFarEnd];
 
-function generateTests() {
-  const tests = [];
-  for (let i = 0; i < 50; i++) {
-    const coordinates = [];
-
-    let size = Math.random() * 35 + 5;
-    for (let i = 0; i < size; i++) {
-      let x = Math.floor(Math.random() * 20);
-      let y = Math.floor(Math.random() * 20);
-      coordinates.push([x, y]);
-    }
-    tests.push("[" + coordinates.join("], [") + "]");
-  }
-  console.log("[" + tests.join("], [") + "]");
-}
+test(tests);
 
 //
 // Display Zone
@@ -1441,27 +1427,37 @@ function addLi(parent, text) {
 //
 // Testing Zone
 //
-tests.forEach((coor, i) => {
-  let meth = -1;
-  meths.reduce((minTot, _, x) => {
-    const curTot = display(coor, i, 4, 8, x);
-    if (curTot < minTot) {
-      meth = x;
-      return curTot;
+function generateTests() {
+  const tests = [];
+  for (let i = 0; i < 50; i++) {
+    const coordinates = [];
+
+    let size = Math.random() * 35 + 5;
+    for (let i = 0; i < size; i++) {
+      let x = Math.floor(Math.random() * 20);
+      let y = Math.floor(Math.random() * 20);
+      coordinates.push([x, y]);
     }
-  }, Number.MAX_SAFE_INTEGER);
-  console.log(`Function ${meth} has the shortest total distance traveled`);
-});
-
-// sample with the first test
-// display(tests[0], 0, 4, 8, 0);
-// display(tests[0], 0, 4, 8, 1);
-
-// display(tests[0], 0, 1, 8, 0);
-// display(tests[0], 0, 2, 8, 0);
+    tests.push("[" + coordinates.join("], [") + "]");
+  }
+  console.log("[" + tests.join("], [") + "]");
+}
+function test(tests) {
+  tests.forEach((coor, i) => {
+    let meth = -1;
+    meths.reduce((minTot, _, x) => {
+      const curTot = display(coor, i, 4, 8, x);
+      if (curTot < minTot) {
+        meth = x;
+        return curTot;
+      }
+    }, Number.MAX_SAFE_INTEGER);
+    console.log(`Function ${meth} has the shortest total distance traveled`);
+  });
+}
 
 //
-// UTILITY FUNCTIONS
+// DISTANCE UTILITY FUNCTIONS
 //
 // O(n)
 function getClosestJob(technician, coordinates, added) {
@@ -1502,11 +1498,14 @@ function getFurthestJob(technician, coordinates, added) {
   added[furthestIndex] = true;
   return furthestIndex;
 }
-
+// O(1)
 function getDistance(a, b) {
   return Math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2);
 }
 
+//
+// SETUP UTILITY FUNCTIONS
+//
 function initialSetUp(coordinates, n) {
   const [y, x] = getXY(coordinates);
   const m = coordinates.length;
@@ -1530,7 +1529,9 @@ function getXY(coordinates) {
   );
 }
 
+//
 // Assigning Functions
+//
 
 // O(n^2)
 // BFS approach
