@@ -438,6 +438,7 @@ const tests = [
     [7, 14],
   ],
 ];
+const meths = [groupbyDistance, groupStartFarEnd];
 
 function generateTests() {
   const tests = [];
@@ -454,8 +455,8 @@ function generateTests() {
   }
   console.log("[" + tests.join("], [") + "]");
 }
-function display(coor, i, max, n) {
-  const groups = groupbyDistance(coor, max, n);
+function display(coor, i, max, n, x) {
+  const groups = meths[x](coor, max, n);
   const ul = document.createElement("ul");
   const li = document.createElement("li");
   li.textContent = `Num jobs: ${coor.length}, Index: ${i}, MaxCap: ${max}, Num Technicians: ${n}`;
@@ -507,7 +508,7 @@ function visualiseCoordinates(coordinates, groups) {
       cell.style.backgroundColor = colors[array[i][j]];
       cell.style.border = "solid 1px black";
       cell.style.width = "50px";
-      cell.style.height = "35px";
+      cell.style.height = "30px";
       row.appendChild(cell);
     }
     table.appendChild(row);
@@ -517,12 +518,16 @@ function visualiseCoordinates(coordinates, groups) {
 
 // display all
 tests.forEach((coor, i) => {
-  display(coor, i, 4, 5);
-  display(coor, i, 4, 6);
+  display(coor, i, 4, 8, 0);
+  display(coor, i, 4, 8, 1);
 });
 
 // sample with the first test
-// display(tests[0], 4, 8);
+// display(tests[0], 0, 4, 8, 0);
+// display(tests[0], 0, 4, 8, 1);
+
+// display(tests[0], 0, 1, 8, 0);
+// display(tests[0], 0, 2, 8, 0);
 
 // Each job is represented by an array of coordinates eg. [x, y]
 // There are n number of technicians that can complete those jobs,
@@ -532,6 +537,7 @@ tests.forEach((coor, i) => {
 // give me an algorithm to calculate that in javascript
 
 // O(n^2)
+// Start From the Center and get the closest job then from that location find the nearest jobs
 function groupbyDistance(coordinates, max, n) {
   const [y, x] = coordinates.reduce(
     (max, coordinate) => {
@@ -595,7 +601,89 @@ function getClosestJob(technician, coordinates, added) {
   added[closestIndex] = true;
   return closestIndex;
 }
+function getFurthestJob(technician, coordinates, added) {
+  let maxDistance = Number.MIN_SAFE_INTEGER;
+  const furthestIndex = coordinates.reduce((maxIndex, coordinate, i) => {
+    if (added[i]) return maxIndex;
+    let curDistance = getDistance(technician, coordinate);
+    if (curDistance > maxDistance) {
+      maxDistance = curDistance;
+      return i;
+    } else {
+      return maxIndex;
+    }
+  }, -1);
+  if (furthestIndex === -1) {
+    return -1;
+  }
+  added[furthestIndex] = true;
+  return furthestIndex;
+}
 
 function getDistance(a, b) {
   return Math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2);
+}
+
+// O(n^2)
+// Do the first iteration with the furthest, from there find the closest job from there
+function groupStartFarEnd(coordinates, max, n) {
+  max = Math.max(1, max);
+  const [y, x] = coordinates.reduce(
+    (max, coordinate) => {
+      return [Math.max(max[0], coordinate[0]), Math.max(max[1], coordinate[1])];
+    },
+    [0, 0]
+  );
+  const m = coordinates.length;
+  const groups = Array.from(Array(n + 1), () => []);
+  const technicians = Array.from(Array(n), () => {
+    return {
+      maxCap: false,
+      curLocation: [Math.floor(y / 2), Math.floor(x / 2)],
+    };
+  });
+  const added = [...Array(m)].map(() => false);
+
+  let counter = 0;
+  let curTech = 0;
+
+  while (counter < m && curTech < n) {
+    const i = getFurthestJob(
+      technicians[curTech].curLocation,
+      coordinates,
+      added
+    );
+    groups[curTech].push(coordinates[i]);
+    if (groups[curTech].length === max) {
+      technicians[curTech].maxCap = true;
+    }
+    technicians[curTech].curLocation = coordinates[i];
+    counter++;
+
+    curTech++;
+  }
+  curTech = curTech % n;
+  while (counter < m && technicians.some((tech) => !tech.maxCap)) {
+    if (!technicians.maxCap) {
+      const i = getClosestJob(
+        technicians[curTech].curLocation,
+        coordinates,
+        added
+      );
+      groups[curTech].push(coordinates[i]);
+      if (groups[curTech].length === max) {
+        technicians[curTech].maxCap = true;
+      }
+      technicians[curTech].curLocation = coordinates[i];
+      counter++;
+    }
+    curTech = (curTech + 1) % n;
+  }
+  added.forEach((el, i) => {
+    if (!el) {
+      groups[n].push(coordinates[i]);
+    }
+  });
+
+  return groups;
 }
