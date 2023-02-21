@@ -1,3 +1,15 @@
+const colors = [
+  "",
+  "red",
+  "orange",
+  "yellow",
+  "green",
+  "blue",
+  "purple",
+  "lightgray",
+  "pink",
+  "cyan",
+];
 const tests = [
   [
     [17, 10],
@@ -427,14 +439,18 @@ const tests = [
 ];
 
 // visualise the graph and show the grouping for each test case
-tests.forEach((coor) => {
-  visualiseCoordinates(coor);
-  const groups = groupbyDistance(coor, 3, 3);
-  const div = document.createElement("div");
-  div.textContent = `${groups.join(" | ")}`;
-  document.body.appendChild(div);
-  document.body.appendChild(document.createElement("br"));
-});
+// tests.forEach((coor) => {
+//   const groups = groupbyDistance(coor, 3, 3);
+//   const div = document.createElement("div");
+//   div.textContent = groups
+//     .map((group) =>
+//       group.map((element) => `[${element[0]}, ${element[1]}]`).join(", ")
+//     )
+//     .join("----");
+//   visualiseCoordinates(coor, groups);
+//   document.body.appendChild(div);
+//   document.body.appendChild(document.createElement("br"));
+// });
 
 // generate test cases
 function genTests() {
@@ -454,7 +470,7 @@ function genTests() {
 }
 
 // visualise the graph
-function visualiseCoordinates(coordinates) {
+function visualiseCoordinates(coordinates, groups) {
   const [y, x] = coordinates.reduce(
     (max, coordinate) => {
       return [Math.max(max[0], coordinate[0]), Math.max(max[1], coordinate[1])];
@@ -468,6 +484,14 @@ function visualiseCoordinates(coordinates) {
     array[coordinate[1]][coordinate[0]] = 1;
   });
 
+  if (groups) {
+    groups.forEach((group, i) => {
+      group.forEach((location) => {
+        array[location[1]][location[0]] = i + 2;
+      });
+    });
+  }
+
   const table = document.createElement("table");
 
   for (let i = 0; i <= x; i++) {
@@ -477,7 +501,7 @@ function visualiseCoordinates(coordinates) {
       const cell = document.createElement("td");
       cell.textContent = `${j}, ${i}`;
       cell.style.textAlign = "center";
-      cell.style.backgroundColor = array[i][j] ? "red" : "";
+      cell.style.backgroundColor = colors[array[i][j]];
       cell.style.border = "solid 1px black";
       cell.style.width = "50px";
       cell.style.height = "35px";
@@ -492,7 +516,30 @@ function visualiseCoordinates(coordinates) {
 
 function groupbyDistance(coordinates, max, n) {
   const m = coordinates.length;
-  const group = Array.from(Array(n), () => []);
+  console.log(m);
+  const groups = Array.from(Array(n), () => []);
 
-  return group;
+  coordinates.forEach((coordinate, i) => {
+    groups[i % groups.length].push(coordinate);
+  });
+
+  return groups;
 }
+
+// sample with the first test
+const groups = groupbyDistance(tests[0], 4, 3);
+const div = document.createElement("div");
+div.textContent = groups
+  .map((group) =>
+    group.map((element) => `[${element[0]}, ${element[1]}]`).join(", ")
+  )
+  .join("----");
+visualiseCoordinates(tests[0], groups);
+document.body.appendChild(div);
+
+// Each job is represented by an array of coordinates eg. [x, y]
+// There are n number of technicians that can complete those jobs,
+// There is a limit to a number of jobs that a technician can do, suppose it is m,
+// We want to assign each job to a technician such that the total distance traveled by technicians is minimum
+// Ideally we want every technicians to have similar number of jobs
+// give me an algorithm to calculate that in javascript
