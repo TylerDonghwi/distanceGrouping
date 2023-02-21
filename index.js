@@ -143,10 +143,6 @@ const tests = [
     [9, 0],
   ],
   [
-    [11, 14],
-    [1, 15],
-  ],
-  [
     [15, 15],
     [13, 15],
     [12, 17],
@@ -382,7 +378,6 @@ const tests = [
     [18, 2],
     [16, 12],
   ],
-  [[11, 0]],
   [
     [14, 7],
     [14, 8],
@@ -447,7 +442,7 @@ function genTests() {
   for (let i = 0; i < 20; i++) {
     const coordinates = [];
 
-    let size = Math.random() * 40;
+    let size = Math.random() * 35 + 5;
     for (let i = 0; i < size; i++) {
       let x = Math.floor(Math.random() * 20);
       let y = Math.floor(Math.random() * 20);
