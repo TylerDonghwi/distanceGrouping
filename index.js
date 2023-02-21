@@ -438,20 +438,6 @@ const tests = [
   ],
 ];
 
-// visualise the graph and show the grouping for each test case
-// tests.forEach((coor) => {
-//   const groups = groupbyDistance(coor, 3, 3);
-//   const div = document.createElement("div");
-//   div.textContent = groups
-//     .map((group) =>
-//       group.map((element) => `[${element[0]}, ${element[1]}]`).join(", ")
-//     )
-//     .join("----");
-//   visualiseCoordinates(coor, groups);
-//   document.body.appendChild(div);
-//   document.body.appendChild(document.createElement("br"));
-// });
-
 // generate test cases
 function genTests() {
   const tests = [];
@@ -468,7 +454,23 @@ function genTests() {
   }
   console.log("[" + tests.join("], [") + "]");
 }
-
+// display
+function display(coor, max, n) {
+  const groups = groupbyDistance(coor, max, n);
+  const ul = document.createElement("ul");
+  groups
+    .map((group) =>
+      group.map((element) => `[${element[0]}, ${element[1]}]`).join(", ")
+    )
+    .forEach((group) => {
+      const li = document.createElement("li");
+      li.textContent = group;
+      ul.appendChild(li);
+    });
+  visualiseCoordinates(coor, groups);
+  document.body.appendChild(ul);
+  document.body.appendChild(document.createElement("br"));
+}
 // visualise the graph
 function visualiseCoordinates(coordinates, groups) {
   const [y, x] = coordinates.reduce(
@@ -484,13 +486,11 @@ function visualiseCoordinates(coordinates, groups) {
     array[coordinate[1]][coordinate[0]] = 1;
   });
 
-  if (groups) {
-    groups.forEach((group, i) => {
-      group.forEach((location) => {
-        array[location[1]][location[0]] = i + 2;
-      });
+  groups.forEach((group, i) => {
+    group.forEach((location) => {
+      array[location[1]][location[0]] = i + 2;
     });
-  }
+  });
 
   const table = document.createElement("table");
 
@@ -507,12 +507,25 @@ function visualiseCoordinates(coordinates, groups) {
       cell.style.height = "35px";
       row.appendChild(cell);
     }
-
     table.appendChild(row);
   }
-
   document.body.appendChild(table);
 }
+
+// display all
+// tests.forEach((coor) => {
+//   display(coor, 4, 5);
+// });
+
+// sample with the first test
+display(tests[0], 4, 5);
+
+// Each job is represented by an array of coordinates eg. [x, y]
+// There are n number of technicians that can complete those jobs,
+// There is a limit to a number of jobs that a technician can do, suppose it is m,
+// We want to assign each job to a technician such that the total distance traveled by technicians is minimum
+// Ideally we want every technicians to have similar number of jobs
+// give me an algorithm to calculate that in javascript
 
 function groupbyDistance(coordinates, max, n) {
   const m = coordinates.length;
@@ -525,21 +538,3 @@ function groupbyDistance(coordinates, max, n) {
 
   return groups;
 }
-
-// sample with the first test
-const groups = groupbyDistance(tests[0], 4, 3);
-const div = document.createElement("div");
-div.textContent = groups
-  .map((group) =>
-    group.map((element) => `[${element[0]}, ${element[1]}]`).join(", ")
-  )
-  .join("----");
-visualiseCoordinates(tests[0], groups);
-document.body.appendChild(div);
-
-// Each job is represented by an array of coordinates eg. [x, y]
-// There are n number of technicians that can complete those jobs,
-// There is a limit to a number of jobs that a technician can do, suppose it is m,
-// We want to assign each job to a technician such that the total distance traveled by technicians is minimum
-// Ideally we want every technicians to have similar number of jobs
-// give me an algorithm to calculate that in javascript
