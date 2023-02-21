@@ -472,7 +472,9 @@ function display(coor, i, max, n, x) {
   const parent = document.createElement("div");
   parent.style.display = "flex";
 
-  const groups = meths[x](coor, max, n);
+  const { groups, travels } = meths[x](coor, max, n);
+  visualiseCoordinates(coor, groups, parent);
+
   const ul = document.createElement("ul");
   addLi(ul, `Index: ${i}, Num jobs: ${coor.length}`);
   addLi(ul, `MaxCap: ${max}, Num Technicians: ${n}`);
@@ -486,10 +488,15 @@ function display(coor, i, max, n, x) {
     .forEach((group, i) => {
       addLi(
         ul,
-        `${i === groups.length - 1 ? "Overflow" : colors[i + 3]}: ${group}`
+        `${i === groups.length - 1 ? "Overflow" : colors[i + 3]}: ${
+          travels[i]
+        } ${group}`
       );
     });
-  visualiseCoordinates(coor, groups, parent);
+  addLi(
+    ul,
+    `Total Travel: ${travels.reduce((total, travel) => total + travel, 0)}`
+  );
   parent.appendChild(ul);
   document.body.appendChild(parent);
 }
@@ -557,7 +564,7 @@ function getClosestJob(technician, coordinates, added) {
   let minDistance = Number.MAX_SAFE_INTEGER;
   const closestIndex = coordinates.reduce((minIndex, coordinate, i) => {
     if (added[i]) return minIndex;
-    let curDistance = getDistance(technician, coordinate);
+    let curDistance = getDistance(technician.curLocation, coordinate);
     if (curDistance < minDistance) {
       minDistance = curDistance;
       return i;
@@ -577,7 +584,7 @@ function getFurthestJob(technician, coordinates, added) {
   let maxDistance = Number.MIN_SAFE_INTEGER;
   const furthestIndex = coordinates.reduce((maxIndex, coordinate, i) => {
     if (added[i]) return maxIndex;
-    let curDistance = getDistance(technician, coordinate);
+    let curDistance = getDistance(technician.curLocation, coordinate);
     if (curDistance > maxDistance) {
       maxDistance = curDistance;
       return i;
@@ -596,6 +603,7 @@ function getFurthestJob(technician, coordinates, added) {
 function getDistance(a, b) {
   return Math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2);
 }
+
 function initialSetUp(coordinates, n) {
   const [y, x] = getXY(coordinates);
   const m = coordinates.length;
@@ -610,7 +618,6 @@ function initialSetUp(coordinates, n) {
   const added = [...Array(m)].map(() => false);
   return { m, groups, technicians, added };
 }
-
 function getXY(coordinates) {
   return coordinates.reduce(
     (max, coordinate) => {
@@ -633,11 +640,7 @@ function groupbyDistance(coordinates, max, n) {
 
   while (counter < m && technicians.some((tech) => !tech.maxCap)) {
     if (!technicians.maxCap) {
-      const i = getClosestJob(
-        technicians[curTech].curLocation,
-        coordinates,
-        added
-      );
+      const i = getClosestJob(technicians[curTech], coordinates, added);
       groups[curTech].push(coordinates[i]);
       if (groups[curTech].length === max) {
         technicians[curTech].maxCap = true;
@@ -653,7 +656,7 @@ function groupbyDistance(coordinates, max, n) {
     }
   });
 
-  return groups;
+  return { groups, travels: technicians.map((tech) => tech.travel) };
 }
 
 // O(n^2)
@@ -667,11 +670,7 @@ function groupStartFarEnd(coordinates, max, n) {
   let curTech = 0;
 
   while (counter < m && curTech < n) {
-    const i = getFurthestJob(
-      technicians[curTech].curLocation,
-      coordinates,
-      added
-    );
+    const i = getFurthestJob(technicians[curTech], coordinates, added);
     groups[curTech].push(coordinates[i]);
     if (groups[curTech].length === max) {
       technicians[curTech].maxCap = true;
@@ -684,11 +683,7 @@ function groupStartFarEnd(coordinates, max, n) {
   curTech = curTech % n;
   while (counter < m && technicians.some((tech) => !tech.maxCap)) {
     if (!technicians.maxCap) {
-      const i = getClosestJob(
-        technicians[curTech].curLocation,
-        coordinates,
-        added
-      );
+      const i = getClosestJob(technicians[curTech], coordinates, added);
       groups[curTech].push(coordinates[i]);
       if (groups[curTech].length === max) {
         technicians[curTech].maxCap = true;
@@ -703,6 +698,5 @@ function groupStartFarEnd(coordinates, max, n) {
       groups[n].push(coordinates[i]);
     }
   });
-
-  return groups;
+  return { groups, travels: technicians.map((tech) => tech.travel) };
 }
