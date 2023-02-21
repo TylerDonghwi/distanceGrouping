@@ -6,6 +6,7 @@
 //
 // Ideally we want every technicians to have similar number of jobs
 // If there is no more capacity left for any of the technicians, add the rest of the unassigned jobs to overflow and return as another group
+// Every technician starts at the center of the map (arbitrary)
 
 const colors = [
   "",
@@ -19,6 +20,13 @@ const colors = [
   "purple",
   "pink",
   "cyan",
+  "brown",
+  "olive",
+  "yellowGreen",
+  "peachPuff",
+  "salmon",
+  "khaki",
+  "thistle",
 ];
 const tests = [
   [
@@ -1357,7 +1365,12 @@ function display(coor, i, max, n, x) {
   addLi(ul, `Index: ${i}, Num jobs: ${coor.length}`);
   addLi(ul, `MaxCap: ${max}, Num Technicians: ${n}`);
   addLi(ul, `Function Number: ${x}`);
-  addLi(ul, coor.map((element) => `[${element[0]}, ${element[1]}]`).join(", "));
+  addLi(
+    ul,
+    `Coordinates: ${coor
+      .map((element) => `[${element[0]}, ${element[1]}]`)
+      .join(", ")}`
+  );
   addLi(ul, "");
 
   groups
@@ -1496,6 +1509,7 @@ function getFurthestJob(technician, coordinates, added) {
     return -1;
   }
   added[furthestIndex] = true;
+  technician.travel += maxDistance;
   return furthestIndex;
 }
 // O(1)
