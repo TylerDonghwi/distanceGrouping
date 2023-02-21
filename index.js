@@ -1,3 +1,12 @@
+// Each job is represented by an array of coordinates eg. [x, y]
+// There are m number of jobs to do
+// There are n number of technicians that can complete those jobs,
+// There is a limit to a number of jobs that a technician can do, suppose it is defined as max,
+// We want to assign each job to a technician such that the total distance traveled by technicians is minimum
+//
+// Ideally we want every technicians to have similar number of jobs
+// If there is no more capacity left for any of the technicians, add the rest of the unassigned jobs to overflow and return as another group
+
 const colors = [
   "",
   "lightgray",
@@ -456,6 +465,9 @@ function generateTests() {
   console.log("[" + tests.join("], [") + "]");
 }
 
+//
+// Display Zone
+//
 function display(coor, i, max, n, x) {
   const parent = document.createElement("div");
   parent.style.display = "flex";
@@ -482,12 +494,7 @@ function display(coor, i, max, n, x) {
   document.body.appendChild(parent);
 }
 function visualiseCoordinates(coordinates, groups, parent) {
-  const [y, x] = coordinates.reduce(
-    (max, coordinate) => {
-      return [Math.max(max[0], coordinate[0]), Math.max(max[1], coordinate[1])];
-    },
-    [0, 0]
-  );
+  const [y, x] = getXY(coordinates);
 
   const array = Array.from({ length: x + 1 }, () => new Array(y + 1).fill(0));
 
@@ -545,6 +552,7 @@ tests.forEach((coor, i) => {
 //
 // UTILITY FUNCTIONS
 //
+// O(n)
 function getClosestJob(technician, coordinates, added) {
   let minDistance = Number.MAX_SAFE_INTEGER;
   const closestIndex = coordinates.reduce((minIndex, coordinate, i) => {
@@ -561,8 +569,10 @@ function getClosestJob(technician, coordinates, added) {
     return -1;
   }
   added[closestIndex] = true;
+  technician.travel += minDistance;
   return closestIndex;
 }
+// O(n)
 function getFurthestJob(technician, coordinates, added) {
   let maxDistance = Number.MIN_SAFE_INTEGER;
   const furthestIndex = coordinates.reduce((maxIndex, coordinate, i) => {
@@ -579,11 +589,35 @@ function getFurthestJob(technician, coordinates, added) {
     return -1;
   }
   added[furthestIndex] = true;
+  technician.travel += maxDistance;
   return furthestIndex;
 }
 
 function getDistance(a, b) {
   return Math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2);
+}
+function initialSetUp(coordinates, n) {
+  const [y, x] = getXY(coordinates);
+  const m = coordinates.length;
+  const groups = Array.from(Array(n + 1), () => []);
+  const technicians = Array.from(Array(n), () => {
+    return {
+      maxCap: false,
+      curLocation: [Math.floor(y / 2), Math.floor(x / 2)],
+      travel: 0,
+    };
+  });
+  const added = [...Array(m)].map(() => false);
+  return { m, groups, technicians, added };
+}
+
+function getXY(coordinates) {
+  return coordinates.reduce(
+    (max, coordinate) => {
+      return [Math.max(max[0], coordinate[0]), Math.max(max[1], coordinate[1])];
+    },
+    [0, 0]
+  );
 }
 
 // Assigning Functions
@@ -592,21 +626,7 @@ function getDistance(a, b) {
 // BFS approach
 // Start From the Center and get the closest job then from that location find the nearest jobs
 function groupbyDistance(coordinates, max, n) {
-  const [y, x] = coordinates.reduce(
-    (max, coordinate) => {
-      return [Math.max(max[0], coordinate[0]), Math.max(max[1], coordinate[1])];
-    },
-    [0, 0]
-  );
-  const m = coordinates.length;
-  const groups = Array.from(Array(n + 1), () => []);
-  const technicians = Array.from(Array(n), () => {
-    return {
-      maxCap: false,
-      curLocation: [Math.floor(y / 2), Math.floor(x / 2)],
-    };
-  });
-  const added = [...Array(m)].map(() => false);
+  const { m, groups, technicians, added } = initialSetUp(coordinates, n);
 
   let counter = 0;
   let curTech = 0;
@@ -641,21 +661,7 @@ function groupbyDistance(coordinates, max, n) {
 // Do the first iteration with the furthest, from there find the closest job from there
 function groupStartFarEnd(coordinates, max, n) {
   max = Math.max(1, max);
-  const [y, x] = coordinates.reduce(
-    (max, coordinate) => {
-      return [Math.max(max[0], coordinate[0]), Math.max(max[1], coordinate[1])];
-    },
-    [0, 0]
-  );
-  const m = coordinates.length;
-  const groups = Array.from(Array(n + 1), () => []);
-  const technicians = Array.from(Array(n), () => {
-    return {
-      maxCap: false,
-      curLocation: [Math.floor(y / 2), Math.floor(x / 2)],
-    };
-  });
-  const added = [...Array(m)].map(() => false);
+  const { m, groups, technicians, added } = initialSetUp(coordinates, n);
 
   let counter = 0;
   let curTech = 0;
