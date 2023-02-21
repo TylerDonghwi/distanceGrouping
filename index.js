@@ -495,15 +495,14 @@ function display(coor, i, max, n, x) {
       );
     });
 
-  addLi(ul, "");
-  addLi(
-    ul,
-    `Total Travel: ${Math.floor(
-      travels.reduce((total, travel) => total + travel, 0)
-    )}`
+  const totalTravel = Math.floor(
+    travels.reduce((total, travel) => total + travel, 0)
   );
+  addLi(ul, "");
+  addLi(ul, `Total Travel: ${totalTravel}`);
   parent.appendChild(ul);
   document.body.appendChild(parent);
+  return totalTravel;
 }
 function visualiseCoordinates(coordinates, groups, parent) {
   const [y, x] = getXY(coordinates);
@@ -551,8 +550,15 @@ function addLi(parent, text) {
 // Testing Zone
 //
 tests.forEach((coor, i) => {
-  display(coor, i, 4, 8, 0);
-  display(coor, i, 4, 8, 1);
+  let meth = -1;
+  meths.reduce((minTot, _, x) => {
+    const curTot = display(coor, i, 4, 8, x);
+    if (curTot < minTot) {
+      meth = x;
+      return curTot;
+    }
+  }, Number.MAX_SAFE_INTEGER);
+  console.log(`Function ${meth} has the shortest total distance traveled`);
 });
 
 // sample with the first test
