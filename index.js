@@ -532,14 +532,8 @@ tests.forEach((coor, i) => {
 // display(tests[0], 0, 1, 8, 0);
 // display(tests[0], 0, 2, 8, 0);
 
-// Each job is represented by an array of coordinates eg. [x, y]
-// There are n number of technicians that can complete those jobs,
-// There is a limit to a number of jobs that a technician can do, suppose it is m,
-// We want to assign each job to a technician such that the total distance traveled by technicians is minimum
-// Ideally we want every technicians to have similar number of jobs
-// give me an algorithm to calculate that in javascript
-
 // O(n^2)
+// BFS approach
 // Start From the Center and get the closest job then from that location find the nearest jobs
 function groupbyDistance(coordinates, max, n) {
   const [y, x] = coordinates.reduce(
@@ -628,6 +622,7 @@ function getDistance(a, b) {
 }
 
 // O(n^2)
+// BFS approach
 // Do the first iteration with the furthest, from there find the closest job from there
 function groupStartFarEnd(coordinates, max, n) {
   max = Math.max(1, max);
