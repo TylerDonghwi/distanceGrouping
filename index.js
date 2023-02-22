@@ -1614,13 +1614,16 @@ const tests = [
   ],
 ];
 const meths = [
-  // groupStartClose, groupStartFarEnd, groupDFS,
-  groupDFSFurthest,
+  // groupStartClose,
+  // groupStartFarEnd,
+  // groupDFS,
+  // groupDFSFurthest,
+  groupOnlyInRangeCoordinate,
 ];
 
-// console.time("timer");
+console.time("timer");
 test(tests);
-// console.timeEnd("timer");
+console.timeEnd("timer");
 
 //
 // Display Zone
@@ -1743,7 +1746,7 @@ function test(tests) {
         return curTot;
       }
     }, Number.MAX_SAFE_INTEGER);
-    console.log(`Function ${meth} has the shortest total distance traveled`);
+    // console.log(`Function ${meth} has the shortest total distance traveled`);
     document.body.appendChild(document.createElement("br"));
     document.body.appendChild(document.createElement("br"));
     document.body.appendChild(document.createElement("br"));
@@ -1803,6 +1806,28 @@ function getFurthestJob(technician, coordinates, added) {
 function getDistance(a, b) {
   return Math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2);
 }
+function getClosestJobInRange(technician, coordinates, filCoors, added) {
+  let minDistance = Number.MAX_SAFE_INTEGER;
+  const closestIndex = coordinates.reduce((minIndex, coordinate, i) => {
+    if (added[i] || !filCoors.includes(coordinate)) return minIndex;
+    let curDistance = getDistance(technician.curLocation, coordinate);
+    if (curDistance < minDistance) {
+      minDistance = curDistance;
+      return i;
+    } else {
+      return minIndex;
+    }
+  }, -1);
+  if (closestIndex === -1) {
+    return -1;
+  }
+  added[closestIndex] = true;
+  if (technician.travel === 0) {
+    technician.initialTravel = minDistance;
+  }
+  technician.travel += minDistance;
+  return closestIndex;
+}
 
 //
 // SETUP UTILITY FUNCTIONS
@@ -1829,6 +1854,10 @@ function getXY(coordinates) {
     },
     [0, 0]
   );
+}
+function coorInRange(coor, curLocation) {
+  const boundary = 10;
+  return getDistance(coor, curLocation) <= boundary;
 }
 
 //
@@ -1953,7 +1982,7 @@ function groupDFS(coordinates, max, n) {
 // cons the later vans need to travel more
 function groupDFSFurthest(coordinates, max, n) {
   const { m, groups, technicians, added } = initialSetUp(coordinates, n);
-  max = m > max * n ? max : Math.floor(m / n);
+  max = m > max * n ? max : Math.ceil(m / n);
 
   let counter = 0;
   let curTech = 0;
@@ -1968,6 +1997,52 @@ function groupDFSFurthest(coordinates, max, n) {
       const i = getClosestJob(technicians[curTech], coordinates, added);
       groups[curTech].push(coordinates[i]);
       technicians[curTech].curLocation = coordinates[i];
+      counter++;
+    }
+    curTech++;
+  }
+  added.forEach((el, i) => {
+    if (!el) {
+      groups[n].push(coordinates[i]);
+    }
+  });
+
+  return {
+    groups,
+    travels: technicians.map((tech) => tech.travel),
+    initialTravels: technicians.map((tech) => tech.initialTravel),
+  };
+}
+
+// Purpose: Increase accuracy of grouping
+// Process: instead of following the current location, get the bound and add it if the job is in the range
+// Outcome: slower as it needs to filter the range
+function groupOnlyInRangeCoordinate(coordinates, max, n) {
+  const { m, groups, technicians, added } = initialSetUp(coordinates, n);
+  max = m > max * n ? max : Math.ceil(m / n);
+
+  let counter = 0;
+  let curTech = 0;
+
+  while (counter < m && curTech < n) {
+    const i = getFurthestJob(technicians[curTech], coordinates, added);
+    groups[curTech].push(coordinates[i]);
+    technicians[curTech].curLocation = coordinates[i];
+    counter++;
+    const newCoors = coordinates.filter((coor) =>
+      coorInRange(coor, technicians[curTech].curLocation)
+    );
+
+    while (groups[curTech].length < max && counter < m) {
+      const i = getClosestJobInRange(
+        technicians[curTech],
+        coordinates,
+        newCoors,
+        added
+      );
+      if (i === -1) break;
+      groups[curTech].push(coordinates[i]);
+      // technicians[curTech].curLocation = coordinates[i];
       counter++;
     }
     curTech++;
