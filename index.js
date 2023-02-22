@@ -1588,37 +1588,20 @@ const tests = [
     [11, 15],
   ],
   [
-    [12, 1],
-    [0, 1],
-    [11, 5],
-    [19, 3],
-    [0, 7],
-    [19, 19],
-    [13, 16],
-    [7, 13],
-    [9, 11],
-    [0, 11],
-    [12, 3],
-    [4, 15],
-    [3, 0],
-    [14, 0],
     [4, 11],
     [9, 6],
     [10, 6],
     [15, 8],
     [19, 9],
-    [13, 10],
-    [18, 11],
-    [10, 8],
-    [4, 6],
   ],
 ];
 const meths = [
-  groupCenterBFS,
-  groupCornerBFS,
-  groupCenterDFS,
-  groupCornerDFS,
-  groupCornerDFSRange,
+  // // groupCenterBFS,
+  // // groupCornerBFS,
+  // // groupCenterDFS,
+  // groupCornerDFS,
+  // // groupCornerDFSRange,
+  groupRandomKMean,
 ];
 
 console.time("timer");
@@ -1628,17 +1611,17 @@ console.timeEnd("timer");
 //
 // Display Zone
 //
-function display(coor, i, max, n, x) {
+function display(coor, i, max, n, meth) {
   const parent = document.createElement("div");
   parent.style.display = "flex";
 
-  const { groups, travels, initialTravels } = meths[x](coor, max, n);
+  const { groups, travels, initialTravels } = meth(coor, max, n);
   visualiseCoordinates(coor, groups, parent);
 
   const ul = document.createElement("ul");
   addLi(ul, `Index: ${i}, Num jobs: ${coor.length}`);
   addLi(ul, `MaxCap: ${max}, Num Technicians: ${n}`);
-  addLi(ul, `Function: ${meths[x].name}`);
+  addLi(ul, `Function: ${meth.name}`);
   addLi(
     ul,
     `Coordinates: ${coor
@@ -1738,17 +1721,7 @@ function generateTests() {
 }
 function test(tests) {
   tests.forEach((coor, i) => {
-    let meth = -1;
-    meths.reduce((minTot, _, x) => {
-      const curTot = display(coor, i, 4, 8, x);
-      if (curTot < minTot) {
-        meth = x;
-        return curTot;
-      }
-    }, Number.MAX_SAFE_INTEGER);
-    // console.log(`Function ${meth} has the shortest total distance traveled`);
-    document.body.appendChild(document.createElement("br"));
-    document.body.appendChild(document.createElement("br"));
+    meths.forEach((meth) => display(coor, i, 4, 8, meth));
     document.body.appendChild(document.createElement("br"));
   });
 }
@@ -1806,27 +1779,15 @@ function getFurthestJob(technician, coordinates, added) {
 function getDistance(a, b) {
   return Math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2);
 }
-function getClosestJobInRange(technician, coordinates, filCoors, added) {
-  let minDistance = Number.MAX_SAFE_INTEGER;
-  const closestIndex = coordinates.reduce((minIndex, coordinate, i) => {
-    if (added[i] || !filCoors.includes(coordinate)) return minIndex;
-    let curDistance = getDistance(technician.curLocation, coordinate);
-    if (curDistance < minDistance) {
-      minDistance = curDistance;
-      return i;
-    } else {
-      return minIndex;
-    }
-  }, -1);
-  if (closestIndex === -1) {
-    return -1;
+
+function getRandomJob(coordinates, added) {
+  let rand = Math.floor(Math.random() * coordinates.length);
+  if (added.every((el) => el)) return -1;
+  while (added[rand]) {
+    rand = Math.floor(Math.random() * coordinates.length);
   }
-  added[closestIndex] = true;
-  if (technician.travel === 0) {
-    technician.initialTravel = minDistance;
-  }
-  technician.travel += minDistance;
-  return closestIndex;
+  added[rand] = true;
+  return rand;
 }
 
 //
@@ -1855,126 +1816,10 @@ function getXY(coordinates) {
     [0, 0]
   );
 }
-function coorInRange(coor, curLocation) {
-  const boundary = 12;
-  return getDistance(coor, curLocation) <= boundary;
-}
 
 //
 // Assigning Functions
 //
-
-// O(n^2)
-// BFS approach
-// Start From the Center and get the closest job then from that location find the nearest jobs
-function groupCenterBFS(coordinates, max, n) {
-  const { m, groups, technicians, added } = initialSetUp(coordinates, n);
-
-  let counter = 0;
-  let curTech = 0;
-
-  while (counter < m && technicians.some((tech) => !tech.maxCap)) {
-    if (!technicians.maxCap) {
-      const i = getClosestJob(technicians[curTech], coordinates, added);
-      groups[curTech].push(coordinates[i]);
-      if (groups[curTech].length === max) {
-        technicians[curTech].maxCap = true;
-      }
-      technicians[curTech].curLocation = coordinates[i];
-      counter++;
-    }
-    curTech = (curTech + 1) % n;
-  }
-  added.forEach((el, i) => {
-    if (!el) {
-      groups[n].push(coordinates[i]);
-    }
-  });
-
-  return {
-    groups,
-    travels: technicians.map((tech) => tech.travel),
-    initialTravels: technicians.map((tech) => tech.initialTravel),
-  };
-}
-
-// O(n^2)
-// BFS approach
-// Do the first iteration with the furthest, from there find the closest job from there
-function groupCornerBFS(coordinates, max, n) {
-  max = Math.max(1, max);
-  const { m, groups, technicians, added } = initialSetUp(coordinates, n);
-
-  let counter = 0;
-  let curTech = 0;
-
-  while (counter < m && curTech < n) {
-    const i = getFurthestJob(technicians[curTech], coordinates, added);
-    groups[curTech].push(coordinates[i]);
-    if (groups[curTech].length === max) {
-      technicians[curTech].maxCap = true;
-    }
-    technicians[curTech].curLocation = coordinates[i];
-    counter++;
-
-    curTech++;
-  }
-  curTech = curTech % n;
-  while (counter < m && technicians.some((tech) => !tech.maxCap)) {
-    if (!technicians.maxCap) {
-      const i = getClosestJob(technicians[curTech], coordinates, added);
-      groups[curTech].push(coordinates[i]);
-      if (groups[curTech].length === max) {
-        technicians[curTech].maxCap = true;
-      }
-      technicians[curTech].curLocation = coordinates[i];
-      counter++;
-    }
-    curTech = (curTech + 1) % n;
-  }
-  added.forEach((el, i) => {
-    if (!el) {
-      groups[n].push(coordinates[i]);
-    }
-  });
-  return {
-    groups,
-    travels: technicians.map((tech) => tech.travel),
-    initialTravels: technicians.map((tech) => tech.initialTravel),
-  };
-}
-
-// O(n^2)
-// DFS approach
-// Pros more accurate grouping
-// Cons not perfect grouping, not equal distribution of work
-function groupCenterDFS(coordinates, max, n) {
-  const { m, groups, technicians, added } = initialSetUp(coordinates, n);
-
-  let counter = 0;
-  let curTech = 0;
-
-  while (counter < m && curTech < n - 1) {
-    while (groups[curTech].length < max && counter < m) {
-      const i = getClosestJob(technicians[curTech], coordinates, added);
-      groups[curTech].push(coordinates[i]);
-      technicians[curTech].curLocation = coordinates[i];
-      counter++;
-    }
-    curTech++;
-  }
-  added.forEach((el, i) => {
-    if (!el) {
-      groups[n].push(coordinates[i]);
-    }
-  });
-
-  return {
-    groups,
-    travels: technicians.map((tech) => tech.travel),
-    initialTravels: technicians.map((tech) => tech.initialTravel),
-  };
-}
 
 // O(n^2)
 // DFS
@@ -2014,46 +1859,27 @@ function groupCornerDFS(coordinates, max, n) {
   };
 }
 
-// Purpose: Increase accuracy of grouping
-// Process: instead of following the current location, get the bound and add it if the job is in the range
-// Outcome: slower as it needs to filter the range
-function groupCornerDFSRange(coordinates, max, n) {
+//
+function groupRandomKMean(coordinates, max, n) {
   const { m, groups, technicians, added } = initialSetUp(coordinates, n);
   max = m > max * n ? max : Math.ceil(m / n);
 
-  let counter = 0;
-  let curTech = 0;
+  const startPoints = [];
 
-  // Iterates m or n * max times
-  while (counter < m && curTech < n) {
-    const i = getFurthestJob(technicians[curTech], coordinates, added);
-    groups[curTech].push(coordinates[i]);
-    technicians[curTech].curLocation = coordinates[i];
-    counter++;
-
-    // Filtering takes O(m)
-    const newCoors = coordinates.filter((coor) =>
-      coorInRange(coor, technicians[curTech].curLocation)
-    );
-    // Iterate max times
-    while (groups[curTech].length < max && counter < m) {
-      // Slower O(m^2) to get the cloest job that is also in range (might be able to refactor to O())
-      const i = getClosestJobInRange(
-        technicians[curTech],
-        coordinates,
-        newCoors,
-        added
-      );
-      if (i === -1) break;
-      groups[curTech].push(coordinates[i]);
-      counter++;
-    }
-    curTech++;
+  for (let i = 0; i < n; i++) {
+    const rand = getRandomJob(coordinates, added);
+    if (rand === -1) break;
+    groups[i].push(coordinates[rand]);
+    startPoints.push(rand);
   }
-  added.forEach((el, i) => {
-    if (!el) {
-      groups[n].push(coordinates[i]);
-    }
+
+  coordinates.forEach((coor, i) => {
+    if (added[i]) return;
+    const index = closestTech(coordinates, i, startPoints, technicians);
+    if (index === -1) return;
+    groups[index].push(coor);
+
+    technicians[index].maxCap = groups[index].length >= max;
   });
 
   return {
@@ -2061,4 +1887,23 @@ function groupCornerDFSRange(coordinates, max, n) {
     travels: technicians.map((tech) => tech.travel),
     initialTravels: technicians.map((tech) => tech.initialTravel),
   };
+}
+
+function closestTech(coordinates, x, startPoints, technicians) {
+  const inits = startPoints.map((el) => coordinates[el]);
+  let minDistance = Number.MAX_SAFE_INTEGER;
+
+  const closest = inits.reduce((minIndex, init, i) => {
+    if (technicians[i].maxCap) return minIndex;
+
+    let curDistance = getDistance(init, coordinates[x]);
+    if (curDistance < minDistance) {
+      minDistance = curDistance;
+      return i;
+    } else {
+      return minIndex;
+    }
+  }, -1);
+
+  return closest;
 }
