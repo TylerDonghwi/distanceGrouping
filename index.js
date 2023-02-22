@@ -1359,7 +1359,10 @@ const tests = [
     [12, 8],
   ],
 ];
-const meths = [groupStartClose, groupStartFarEnd, groupDFS];
+const meths = [
+  // groupStartClose, groupStartFarEnd, groupDFS,
+  groupDFSFurthest,
+];
 
 // console.time("timer");
 test(tests);
@@ -1480,6 +1483,9 @@ function test(tests) {
       }
     }, Number.MAX_SAFE_INTEGER);
     console.log(`Function ${meth} has the shortest total distance traveled`);
+    document.body.appendChild(document.createElement("br"));
+    document.body.appendChild(document.createElement("br"));
+    document.body.appendChild(document.createElement("br"));
   });
 }
 
@@ -1635,6 +1641,8 @@ function groupStartFarEnd(coordinates, max, n) {
 
 // O(n^2)
 // DFS approach
+// Pros more accurate grouping
+// Cons not perfect grouping, not equal distribution of work
 function groupDFS(coordinates, max, n) {
   const { m, groups, technicians, added } = initialSetUp(coordinates, n);
 
@@ -1642,6 +1650,38 @@ function groupDFS(coordinates, max, n) {
   let curTech = 0;
 
   while (counter < m && curTech < n - 1) {
+    while (groups[curTech].length < max && counter < m) {
+      const i = getClosestJob(technicians[curTech], coordinates, added);
+      groups[curTech].push(coordinates[i]);
+      technicians[curTech].curLocation = coordinates[i];
+      counter++;
+    }
+    curTech++;
+  }
+  added.forEach((el, i) => {
+    if (!el) {
+      groups[n].push(coordinates[i]);
+    }
+  });
+
+  return { groups, travels: technicians.map((tech) => tech.travel) };
+}
+
+// O(n^2)
+// DFS
+// Start furthest from the center
+function groupDFSFurthest(coordinates, max, n) {
+  const { m, groups, technicians, added } = initialSetUp(coordinates, n);
+
+  let counter = 0;
+  let curTech = 0;
+
+  while (counter < m && curTech < n - 1) {
+    const i = getFurthestJob(technicians[curTech], coordinates, added);
+    groups[curTech].push(coordinates[i]);
+    technicians[curTech].curLocation = coordinates[i];
+    counter++;
+
     while (groups[curTech].length < max && counter < m) {
       const i = getClosestJob(technicians[curTech], coordinates, added);
       groups[curTech].push(coordinates[i]);
