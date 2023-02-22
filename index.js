@@ -1629,7 +1629,7 @@ function display(coor, i, max, n, x) {
   const parent = document.createElement("div");
   parent.style.display = "flex";
 
-  const { groups, travels } = meths[x](coor, max, n);
+  const { groups, travels, initialTravels } = meths[x](coor, max, n);
   visualiseCoordinates(coor, groups, parent);
 
   const ul = document.createElement("ul");
@@ -1653,7 +1653,9 @@ function display(coor, i, max, n, x) {
         ul,
         i === groups.length - 1
           ? `overflow: 0, ${group ? group : "None Assigned"}`
-          : `${colors[i + 3]}: ${Math.floor(travels[i])}, ${group}`
+          : `${colors[i + 3]}: ${Math.floor(
+              travels[i]
+            )} (starts with ${Math.floor(initialTravels[i])}), ${group}`
       );
     });
 
@@ -1662,9 +1664,14 @@ function display(coor, i, max, n, x) {
   );
   addLi(ul, "");
   addLi(ul, `Total Travel: ${totalTravel}`);
+
+  const totalTravelMinutStart =
+    totalTravel -
+    Math.floor(initialTravels.reduce((total, travel) => total + travel, 0));
+  addLi(ul, `Total Travel Without Start: ${totalTravelMinutStart}`);
   parent.appendChild(ul);
   document.body.appendChild(parent);
-  return totalTravel;
+  return totalTravelMinutStart;
 }
 function visualiseCoordinates(coordinates, groups, parent) {
   const [y, x] = getXY(coordinates);
@@ -1763,6 +1770,9 @@ function getClosestJob(technician, coordinates, added) {
     return -1;
   }
   added[closestIndex] = true;
+  if (technician.travel === 0) {
+    technician.initialTravel = minDistance;
+  }
   technician.travel += minDistance;
   return closestIndex;
 }
@@ -1783,6 +1793,9 @@ function getFurthestJob(technician, coordinates, added) {
     return -1;
   }
   added[furthestIndex] = true;
+  if (technician.travel === 0) {
+    technician.initialTravel = maxDistance;
+  }
   technician.travel += maxDistance;
   return furthestIndex;
 }
@@ -1803,6 +1816,7 @@ function initialSetUp(coordinates, n) {
       maxCap: false,
       curLocation: [Math.floor(y / 2), Math.floor(x / 2)],
       travel: 0,
+      initialTravel: 0,
     };
   });
   const added = [...Array(m)].map(() => false);
@@ -1848,7 +1862,11 @@ function groupStartClose(coordinates, max, n) {
     }
   });
 
-  return { groups, travels: technicians.map((tech) => tech.travel) };
+  return {
+    groups,
+    travels: technicians.map((tech) => tech.travel),
+    initialTravels: technicians.map((tech) => tech.initialTravel),
+  };
 }
 
 // O(n^2)
@@ -1890,7 +1908,11 @@ function groupStartFarEnd(coordinates, max, n) {
       groups[n].push(coordinates[i]);
     }
   });
-  return { groups, travels: technicians.map((tech) => tech.travel) };
+  return {
+    groups,
+    travels: technicians.map((tech) => tech.travel),
+    initialTravels: technicians.map((tech) => tech.initialTravel),
+  };
 }
 
 // O(n^2)
@@ -1918,14 +1940,20 @@ function groupDFS(coordinates, max, n) {
     }
   });
 
-  return { groups, travels: technicians.map((tech) => tech.travel) };
+  return {
+    groups,
+    travels: technicians.map((tech) => tech.travel),
+    initialTravels: technicians.map((tech) => tech.initialTravel),
+  };
 }
 
 // O(n^2)
 // DFS
 // Start furthest from the center
+// cons the later vans need to travel more
 function groupDFSFurthest(coordinates, max, n) {
   const { m, groups, technicians, added } = initialSetUp(coordinates, n);
+  max = m > max * n ? max : Math.floor(m / n);
 
   let counter = 0;
   let curTech = 0;
@@ -1950,5 +1978,9 @@ function groupDFSFurthest(coordinates, max, n) {
     }
   });
 
-  return { groups, travels: technicians.map((tech) => tech.travel) };
+  return {
+    groups,
+    travels: technicians.map((tech) => tech.travel),
+    initialTravels: technicians.map((tech) => tech.initialTravel),
+  };
 }
