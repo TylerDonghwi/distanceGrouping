@@ -1601,7 +1601,8 @@ const meths = [
   // // groupCenterDFS,
   // groupCornerDFS,
   // // groupCornerDFSRange,
-  groupRandomKMean,
+  // groupRandomKMean,
+  groupFindMin,
 ];
 
 console.time("timer");
@@ -1651,13 +1652,13 @@ function display(coor, i, max, n, meth) {
   addLi(ul, "");
   addLi(ul, `Total Travel: ${totalTravel}`);
 
-  const totalTravelMinutStart =
-    totalTravel -
-    Math.floor(initialTravels.reduce((total, travel) => total + travel, 0));
-  addLi(ul, `Total Travel Without Start: ${totalTravelMinutStart}`);
+  // const totalTravelMinutStart =
+  //   totalTravel -
+  //   Math.floor(initialTravels.reduce((total, travel) => total + travel, 0));
+  // addLi(ul, `Total Travel Without Start: ${totalTravelMinutStart}`);
   parent.appendChild(ul);
   document.body.appendChild(parent);
-  return totalTravelMinutStart;
+  return totalTravel;
 }
 function visualiseCoordinates(coordinates, groups, parent) {
   const [y, x] = getXY(coordinates);
@@ -1720,10 +1721,18 @@ function generateTests() {
   console.log("[" + tests.join("], [") + "]");
 }
 function test(tests) {
-  tests.forEach((coor, i) => {
-    meths.forEach((meth) => display(coor, i, 4, 8, meth));
-    document.body.appendChild(document.createElement("br"));
-  });
+  // tests.forEach((coor, i) => {
+  //   meths.forEach((meth) => display(coor, i, 4, 8, meth));
+  //   document.body.appendChild(document.createElement("br"));
+  // });
+
+  // const sum = tests.reduce((sum, coor, i) => {
+  //   document.body.appendChild(document.createElement("br"));
+  //   return sum + display(tests[0], 0, 4, 8, meths[0]);
+  // }, 0);
+  // console.log(sum / tests.length);
+  display(tests[0], 0, 4, 8, meths[0]);
+  // meths.forEach((meth) => display(tests[0], 0, 4, 8, meth));
 }
 
 //
@@ -1780,6 +1789,7 @@ function getDistance(a, b) {
   return Math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2);
 }
 
+// O(numTechnicians)
 function getRandomJob(coordinates, added) {
   let rand = Math.floor(Math.random() * coordinates.length);
   if (added.every((el) => el)) return -1;
@@ -1859,10 +1869,25 @@ function groupCornerDFS(coordinates, max, n) {
   };
 }
 
-//
+// Iterating multiple times to find the best K-means cluster
+function groupFindMin(coordinates, max, n) {
+  let res = groupRandomKMean(coordinates, max, n);
+  let minTravel = res.travels.reduce((sum, travel) => sum + travel, 0);
+
+  for (let i = 0; i < 10000; i++) {
+    const cur = groupRandomKMean(coordinates, max, n);
+    let curTravel = cur.travels.reduce((sum, travel) => sum + travel, 0);
+    if (curTravel < minTravel) {
+      res = cur;
+      minTravel = curTravel;
+    }
+  }
+  return res;
+}
+
+// Finding a random K mean cluster
 function groupRandomKMean(coordinates, max, n) {
-  const { m, groups, technicians, added } = initialSetUp(coordinates, n);
-  max = m > max * n ? max : Math.ceil(m / n);
+  const { groups, technicians, added } = initialSetUp(coordinates, n);
 
   const startPoints = [];
 
@@ -1873,13 +1898,27 @@ function groupRandomKMean(coordinates, max, n) {
     startPoints.push(rand);
   }
 
+  // edge case may end up as legacy
+  if (max === 1) {
+    return {
+      groups,
+      travels: technicians.map((tech) => tech.travel),
+      initialTravels: technicians.map((tech) => tech.initialTravel),
+    };
+  }
+
   coordinates.forEach((coor, i) => {
     if (added[i]) return;
     const index = closestTech(coordinates, i, startPoints, technicians);
     if (index === -1) return;
     groups[index].push(coor);
-
+    added[i] = true;
     technicians[index].maxCap = groups[index].length >= max;
+  });
+  added.forEach((el, i) => {
+    if (!el) {
+      groups[n].push(coordinates[i]);
+    }
   });
 
   return {
@@ -1904,6 +1943,10 @@ function closestTech(coordinates, x, startPoints, technicians) {
       return minIndex;
     }
   }, -1);
+
+  if (closest !== -1) {
+    technicians[closest].travel += minDistance;
+  }
 
   return closest;
 }
