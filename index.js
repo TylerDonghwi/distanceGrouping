@@ -1,4 +1,4 @@
-const max = 4;
+const maxWeight = 8;
 const n = 8;
 const numIterations = 1000;
 
@@ -1473,7 +1473,7 @@ function display(coor, i, max, n, meth) {
   const parent = document.createElement("div");
   parent.style.display = "flex";
 
-  const { groups, travels, initialTravels } = meth(coor, max, n);
+  const { groups, travels } = meth(coor, max, n);
   visualiseCoordinates(coor, groups, parent);
 
   const ul = document.createElement("ul");
@@ -1488,6 +1488,10 @@ function display(coor, i, max, n, meth) {
   );
   addLi(ul, "");
 
+  const weights = groups.map((group) =>
+    group.reduce((sum, coor) => sum + coor[2], 0)
+  );
+
   groups
     .map((group) =>
       group.map((element) => `[${element[0]}, ${element[1]}]`).join(", ")
@@ -1497,9 +1501,9 @@ function display(coor, i, max, n, meth) {
         ul,
         i === groups.length - 1
           ? `overflow: 0, ${group ? group : "None Assigned"}`
-          : `${colors[i + 3]}: ${Math.floor(
-              travels[i]
-            )} (starts with ${Math.floor(initialTravels[i])}), ${group}`
+          : `${colors[i + 3]}: t: ${Math.floor(travels[i])}, w: ${
+              weights[i]
+            }, ${group}`
       );
     });
 
@@ -1548,7 +1552,7 @@ function visualiseCoordinates(coordinates, groups, parent) {
 
     for (let j = 0; j <= y; j++) {
       const cell = document.createElement("td");
-      cell.textContent = `${j}, ${i} ${weightArr[i][j]}`;
+      cell.textContent = `${j}, ${i}, ${weightArr[i][j]}`;
       cell.style.textAlign = "center";
       cell.style.backgroundColor = colors[groupArr[i][j]];
       cell.style.border = "solid 1px black";
@@ -1586,7 +1590,7 @@ function generateTests() {
 }
 function test(tests) {
   tests.forEach((test, i) => {
-    meths.map((meth) => display(test, i, max, n, meth));
+    meths.map((meth) => display(test, i, maxWeight, n, meth));
     document.body.appendChild(document.createElement("br"));
   });
 }
@@ -1600,10 +1604,9 @@ function initialSetUp(coordinates, n) {
   const groups = Array.from(Array(n + 1), () => []);
   const technicians = Array.from(Array(n), () => {
     return {
-      maxCap: false,
       curLocation: [Math.floor(y / 2), Math.floor(x / 2)],
       travel: 0,
-      initialTravel: 0,
+      weight: 0,
     };
   });
   const added = [...Array(m)].map(() => false);
@@ -1667,8 +1670,8 @@ function groupRandomKMean(coordinates, max, n) {
     const index = closestTech(coordinates, i, startPoints, technicians);
     if (index === -1) return;
     groups[index].push(coor);
+    technicians[index].weight += coor[2];
     added[i] = true;
-    technicians[index].maxCap = groups[index].length >= max;
   });
   added.forEach((el, i) => {
     if (!el) {
@@ -1679,7 +1682,6 @@ function groupRandomKMean(coordinates, max, n) {
   return {
     groups,
     travels: technicians.map((tech) => tech.travel),
-    initialTravels: technicians.map((tech) => tech.initialTravel),
   };
 }
 
@@ -1688,7 +1690,9 @@ function closestTech(coordinates, x, startPoints, technicians) {
   let minDistance = Number.MAX_SAFE_INTEGER;
 
   const closest = inits.reduce((minIndex, init, i) => {
-    if (technicians[i].maxCap) return minIndex;
+    if (technicians[i].weight + coordinates[x][2] >= maxWeight) {
+      return minIndex;
+    }
 
     let curDistance = getDistance(init, coordinates[x]);
     if (curDistance < minDistance) {
