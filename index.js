@@ -1,6 +1,6 @@
 const maxWeight = 8;
 const n = 8;
-const numIterations = 1;
+const numIterations = 1000;
 
 const colors = [
   "",
@@ -1460,26 +1460,22 @@ const tests = [
     [3, 8, 3],
   ],
 ];
-const meths = [groupFindMin];
 
 console.time("timer");
 test(tests);
 console.timeEnd("timer");
 
-//
 // Display Zone
-//
-function display(coor, i, max, n, meth) {
+function display(coor, i, max, n) {
   const parent = document.createElement("div");
   parent.style.display = "flex";
 
-  const { groups, travels } = meth(coor, max, n);
+  const { groups, travels } = kMeanCluster(coor, max, n);
   visualiseCoordinates(coor, groups, parent);
 
   const ul = document.createElement("ul");
   addLi(ul, `Index: ${i}, Num jobs: ${coor.length}`);
   addLi(ul, `MaxCap: ${max}, Num Technicians: ${n}`);
-  addLi(ul, `Function: ${meth.name}`);
   addLi(
     ul,
     `Coordinates: ${coor
@@ -1590,59 +1586,21 @@ function generateTests() {
 }
 function test(tests) {
   tests.forEach((test, i) => {
-    meths.map((meth) => display(test, i, maxWeight, n, meth));
+    display(test, i, maxWeight, n);
     document.body.appendChild(document.createElement("br"));
   });
-}
-
-//
-// SETUP UTILITY FUNCTIONS
-//
-function initialSetUp(coordinates, n) {
-  const [y, x] = getXY(coordinates);
-  const m = coordinates.length;
-  const groups = Array.from(Array(n + 1), () => []);
-  const technicians = Array.from(Array(n), () => {
-    return {
-      curLocation: [Math.floor(y / 2), Math.floor(x / 2)],
-      travel: 0,
-      weight: 0,
-    };
-  });
-  const added = [...Array(m)].map(() => false);
-  return { m, groups, technicians, added };
-}
-function getXY(coordinates) {
-  return coordinates.reduce(
-    (max, coordinate) => {
-      return [Math.max(max[0], coordinate[0]), Math.max(max[1], coordinate[1])];
-    },
-    [0, 0]
-  );
-}
-function getDistance(a, b) {
-  return Math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2);
-}
-function getRandomJob(coordinates, added) {
-  let rand = Math.floor(Math.random() * coordinates.length);
-  if (added.every((el) => el)) return -1;
-  while (added[rand]) {
-    rand = Math.floor(Math.random() * coordinates.length);
-  }
-  added[rand] = true;
-  return rand;
 }
 
 // K means clustering with x iterations with randomly chosen coordinates
 // RUNTIME: O(number of iterations * number of jobs * number of technicians)
 
 // Iterating multiple times to find the best K-means cluster
-function groupFindMin(coordinates, max, n) {
+function kMeanCluster(coordinates, max, n) {
   let res;
   let minTravel = Number.MAX_SAFE_INTEGER;
 
   for (let i = 0; i < numIterations; i++) {
-    const cur = groupRandomKMean(coordinates, max, n);
+    const cur = getRandomKMean(coordinates, max, n);
     let curTravel = cur.travels.reduce((sum, travel) => sum + travel, 0);
     if (curTravel < minTravel) {
       res = cur;
@@ -1653,7 +1611,7 @@ function groupFindMin(coordinates, max, n) {
 }
 
 // Finding a random K mean cluster
-function groupRandomKMean(coordinates, max, n) {
+function getRandomKMean(coordinates, max, n) {
   const { groups, technicians, added } = initialSetUp(coordinates, n);
 
   const startPoints = [];
@@ -1690,6 +1648,7 @@ function groupRandomKMean(coordinates, max, n) {
 function closestTech(coordinates, x, startPoints, technicians) {
   const inits = startPoints.map((el) => coordinates[el]);
   let minDistance = Number.MAX_SAFE_INTEGER;
+
   const closest = inits.reduce((minIndex, init, i) => {
     if (technicians[i].weight + coordinates[x][2] > maxWeight) return minIndex;
 
@@ -1697,9 +1656,9 @@ function closestTech(coordinates, x, startPoints, technicians) {
     if (curDistance < minDistance) {
       minDistance = curDistance;
       return i;
-    } else {
-      return minIndex;
     }
+
+    return minIndex;
   }, -1);
 
   if (closest !== -1) {
@@ -1707,4 +1666,46 @@ function closestTech(coordinates, x, startPoints, technicians) {
   }
 
   return closest;
+}
+
+function initialSetUp(coordinates, n) {
+  const [y, x] = getXY(coordinates);
+  const m = coordinates.length;
+  const groups = Array.from(Array(n + 1), () => []);
+  const technicians = Array.from(Array(n), () => {
+    return {
+      curLocation: [Math.floor(y / 2), Math.floor(x / 2)],
+      travel: 0,
+      weight: 0,
+    };
+  });
+  const added = [...Array(m)].map(() => false);
+  return { m, groups, technicians, added };
+}
+
+// Returns the range of area that the coordinates are located
+function getXY(coordinates) {
+  return coordinates.reduce(
+    (max, coordinate) => {
+      return [Math.max(max[0], coordinate[0]), Math.max(max[1], coordinate[1])];
+    },
+    [0, 0]
+  );
+}
+
+// Returns the distance
+function getDistance(a, b) {
+  return Math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2);
+}
+
+// Returns a random job that is not already added to a group.
+function getRandomJob(coordinates, added) {
+  if (added.every((el) => el)) return -1;
+
+  let rand = Math.floor(Math.random() * coordinates.length);
+  while (added[rand]) {
+    rand = Math.floor(Math.random() * coordinates.length);
+  }
+  added[rand] = true;
+  return rand;
 }
