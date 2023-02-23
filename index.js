@@ -973,7 +973,6 @@ console.timeEnd("timer");
 // Display Zone
 function display(coor, i, max, n) {
   const parent = document.createElement("div");
-  parent.style.display = "flex";
 
   const { groups, travels } = kMeanCluster(coor, max, n);
   visualiseCoordinates(coor, groups, parent);
@@ -1014,10 +1013,6 @@ function display(coor, i, max, n) {
   addLi(ul, "");
   addLi(ul, `Total Travel: ${totalTravel}`);
 
-  // const totalTravelMinutStart =
-  //   totalTravel -
-  //   Math.floor(initialTravels.reduce((total, travel) => total + travel, 0));
-  // addLi(ul, `Total Travel Without Start: ${totalTravelMinutStart}`);
   parent.appendChild(ul);
   document.body.appendChild(parent);
   return totalTravel;
@@ -1044,9 +1039,6 @@ function visualiseCoordinates(coordinates, groups, parent) {
   });
 
   const table = document.createElement("table");
-  table.style.marginBottom = "20px";
-  table.style.minWidth = "65vw";
-  table.style.minHeight = "47.5vh";
 
   for (let i = 0; i <= x; i++) {
     const row = document.createElement("tr");
@@ -1131,7 +1123,7 @@ function getRandomKMean(coordinates, max, n) {
 
   coordinates.forEach((coor, i) => {
     if (added[i]) return;
-    const index = closestTech(coordinates, i, startPoints, technicians);
+    const index = closestTech(coordinates, i, startPoints, technicians, max);
     if (index === -1) return;
     groups[index].push(coor);
     technicians[index].weight += coor[2];
@@ -1150,12 +1142,12 @@ function getRandomKMean(coordinates, max, n) {
   };
 }
 
-function closestTech(coordinates, x, startPoints, technicians) {
+function closestTech(coordinates, x, startPoints, technicians, max) {
   const inits = startPoints.map((el) => coordinates[el]);
   let minDistance = Number.MAX_SAFE_INTEGER;
 
   const closest = inits.reduce((minIndex, init, i) => {
-    if (technicians[i].weight + coordinates[x][2] > maxWeight) return minIndex;
+    if (technicians[i].weight + coordinates[x][2] > max) return minIndex;
 
     let curDistance = getDistance(init, coordinates[x]);
     if (curDistance < minDistance) {
