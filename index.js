@@ -1702,26 +1702,6 @@ function test(tests) {
 }
 
 //
-// DISTANCE UTILITY FUNCTIONS
-//
-
-// O(1)
-function getDistance(a, b) {
-  return Math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2);
-}
-
-// O(numTechnicians)
-function getRandomJob(coordinates, added) {
-  let rand = Math.floor(Math.random() * coordinates.length);
-  if (added.every((el) => el)) return -1;
-  while (added[rand]) {
-    rand = Math.floor(Math.random() * coordinates.length);
-  }
-  added[rand] = true;
-  return rand;
-}
-
-//
 // SETUP UTILITY FUNCTIONS
 //
 function initialSetUp(coordinates, n) {
@@ -1747,10 +1727,18 @@ function getXY(coordinates) {
     [0, 0]
   );
 }
-
-//
-// Assigning Functions
-//
+function getDistance(a, b) {
+  return Math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2);
+}
+function getRandomJob(coordinates, added) {
+  let rand = Math.floor(Math.random() * coordinates.length);
+  if (added.every((el) => el)) return -1;
+  while (added[rand]) {
+    rand = Math.floor(Math.random() * coordinates.length);
+  }
+  added[rand] = true;
+  return rand;
+}
 
 // K means clustering with x iterations with randomly chosen coordinates
 // RUNTIME: O(number of iterations * number of jobs * number of technicians)
@@ -1782,15 +1770,6 @@ function groupRandomKMean(coordinates, max, n) {
     if (rand === -1) break;
     groups[i].push(coordinates[rand]);
     startPoints.push(rand);
-  }
-
-  // edge case may end up as legacy
-  if (max === 1) {
-    return {
-      groups,
-      travels: technicians.map((tech) => tech.travel),
-      initialTravels: technicians.map((tech) => tech.initialTravel),
-    };
   }
 
   coordinates.forEach((coor, i) => {
