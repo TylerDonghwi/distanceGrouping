@@ -1715,20 +1715,7 @@ function generateTests() {
   }
   console.log("[" + tests.join("], [") + "]");
 }
-function test(tests) {
-  tests.forEach((coor, i) => {
-    meths.forEach((meth) => display(coor, i, 4, 8, meth));
-    document.body.appendChild(document.createElement("br"));
-  });
-
-  // const sum = tests.reduce((sum, coor, i) => {
-  //   document.body.appendChild(document.createElement("br"));
-  //   return sum + display(tests[0], 0, 4, 8, meths[0]);
-  // }, 0);
-  // console.log(sum / tests.length);
-
-  // display(tests[0], 0, 4, 8, meths[0]);
-}
+function test(tests) {}
 
 //
 // DISTANCE UTILITY FUNCTIONS
@@ -1781,7 +1768,7 @@ function getXY(coordinates) {
 // Assigning Functions
 //
 
-// K means clustering
+// K means clustering with x iterations with randomly chosen coordinates
 // RUNTIME: O(number of iterations * number of jobs * number of technicians)
 
 // Iterating multiple times to find the best K-means cluster
@@ -1866,10 +1853,15 @@ function closestTech(coordinates, x, startPoints, technicians) {
   return closest;
 }
 
+//
+// K means clustering with evenly distributed start points
+// Faster but less accurate
+//
+
 function groupEvenlySpreadKMean(coordinates, max, n) {
   const { groups, technicians, added } = initialSetUp(coordinates, n);
 
-  const startPoints = getEvenStarts(coordinates, n, groups);
+  const startPoints = getEvenStarts(coordinates, n, groups, added);
 
   // edge case handling, may end up as legacy
   if (max === 1) {
@@ -1901,10 +1893,9 @@ function groupEvenlySpreadKMean(coordinates, max, n) {
   };
 }
 
-function getEvenStarts(coordinates, n, groups) {
+function getEvenStarts(coordinates, n, groups, added) {
   // O(n)
   const { width, height, leftmost, topmost } = getBoundaries(coordinates);
-  // console.log(width, height, leftmost, rightmost, topmost, bottommost);
 
   const res = [];
 
@@ -1920,7 +1911,6 @@ function getEvenStarts(coordinates, n, groups) {
   let av = (rows[0] + rows.at(-1)) / 2;
   rows[0] = Math.ceil(av);
   rows[rows.length - 1] = Math.floor(av);
-  // console.log(rows);
 
   let yIncrement = height / (2 * rows.length);
   // O(number of technicians * n)
@@ -1931,22 +1921,18 @@ function getEvenStarts(coordinates, n, groups) {
         leftmost + (2 * j + 1) * xIncrement,
         topmost + (2 * i + 1) * yIncrement,
       ];
-      console.log(coor);
-      res.push(coor);
+      const x = getClosestJob(coor, coordinates, added);
+      if (x === -1) return;
+      added[x] = true;
+      groups[i * row + j].push(coordinates[x]);
+      res.push(x);
     });
   });
-  // console.log(res);
-  return [1];
+  return res;
 }
 
+// O(n)
 function getBoundaries(coordinates) {
-  // const sum = coordinates.reduce(
-  //   (acc, curr) => [acc[0] + curr[0], acc[1] + curr[1]],
-  //   [0, 0]
-  // );
-
-  // const average = [sum[0] / coordinates.length, sum[1] / coordinates.length];
-
   const xCoords = coordinates.map((coord) => coord[0]);
   const leftmost = Math.min(...xCoords);
   const rightmost = Math.max(...xCoords);
@@ -1959,4 +1945,24 @@ function getBoundaries(coordinates) {
   const height = bottommost - topmost;
 
   return { width, height, leftmost, topmost };
+}
+
+// O(n)
+function getClosestJob(curLocation, coordinates, added) {
+  let minDistance = Number.MAX_SAFE_INTEGER;
+  const closestIndex = coordinates.reduce((minIndex, coordinate, i) => {
+    if (added[i]) return minIndex;
+    let curDistance = getDistance(curLocation, coordinate);
+    if (curDistance < minDistance) {
+      minDistance = curDistance;
+      return i;
+    } else {
+      return minIndex;
+    }
+  }, -1);
+  if (closestIndex === -1) {
+    return -1;
+  }
+  added[closestIndex] = true;
+  return closestIndex;
 }
