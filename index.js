@@ -19,6 +19,9 @@
 // Suppose there are m jobs and n technicians, there are m! / (n! * (m - n)!) potential start points
 // if n = 7 and m = 30, there will be 2035800 potential combinations of start points
 // Need to find the best start points without having to iterate all of them
+const max = 4;
+const n = 8;
+const numIterations = 10;
 
 const colors = [
   "",
@@ -1595,10 +1598,7 @@ const tests = [
     [19, 9],
   ],
 ];
-const meths = [
-  // groupFindMin,
-  groupEvenlySpreadKMean,
-];
+const meths = [groupFindMin, groupEvenlySpreadKMean];
 
 console.time("timer");
 test(tests);
@@ -1715,7 +1715,17 @@ function generateTests() {
   }
   console.log("[" + tests.join("], [") + "]");
 }
-function test(tests) {}
+function test(tests) {
+  let count = 0;
+  tests.forEach((test, i) => {
+    const res = meths.map((meth) => display(test, i, max, n, meth));
+    if (res[0] < res[1]) {
+      count++;
+    }
+    document.body.appendChild(document.createElement("br"));
+  });
+  console.log(`method 1 was faster ${count} times`);
+}
 
 //
 // DISTANCE UTILITY FUNCTIONS
@@ -1776,7 +1786,7 @@ function groupFindMin(coordinates, max, n) {
   let res;
   let minTravel = Number.MAX_SAFE_INTEGER;
 
-  for (let i = 0; i < 10000; i++) {
+  for (let i = 0; i < numIterations; i++) {
     const cur = groupRandomKMean(coordinates, max, n);
     let curTravel = cur.travels.reduce((sum, travel) => sum + travel, 0);
     if (curTravel < minTravel) {
