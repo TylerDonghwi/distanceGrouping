@@ -1,24 +1,3 @@
-// Each job is represented by an array of coordinates eg. [x, y]
-// There are m number of jobs to do
-// There are n number of technicians that can complete those jobs,
-// There is a limit to a number of jobs that a technician can do, suppose it is defined as max,
-// We want to assign each job to a technician such that the total distance traveled by technicians is minimum
-
-// Ideally we want every technicians to have similar number of jobs
-// If there is no more capacity left for any of the technicians, add the rest of the unassigned jobs to overflow and return as another group
-// Every technician starts at the center of the map (arbitrary)
-
-// Suppose there will be around 30 jobs
-// O(n) = 30
-// O(n^2) = 900
-// O(n^3) = 27000
-// O(n^4) = 810000
-// O(n!) = 2.65e32
-// from O(n) to O(n^3) will be acceptable
-
-// Suppose there are m jobs and n technicians, there are m! / (n! * (m - n)!) potential start points
-// if n = 7 and m = 30, there will be 2035800 potential combinations of start points
-// Need to find the best start points without having to iterate all of them
 const max = 4;
 const n = 8;
 const numIterations = 10;
@@ -1598,7 +1577,7 @@ const tests = [
     [19, 9],
   ],
 ];
-const meths = [groupFindMin, groupEvenlySpreadKMean];
+const meths = [groupFindMin];
 
 console.time("timer");
 test(tests);
@@ -1716,15 +1695,10 @@ function generateTests() {
   console.log("[" + tests.join("], [") + "]");
 }
 function test(tests) {
-  let count = 0;
   tests.forEach((test, i) => {
-    const res = meths.map((meth) => display(test, i, max, n, meth));
-    if (res[0] < res[1]) {
-      count++;
-    }
+    meths.map((meth) => display(test, i, max, n, meth));
     document.body.appendChild(document.createElement("br"));
   });
-  console.log(`method 1 was faster ${count} times`);
 }
 
 //
@@ -1861,118 +1835,4 @@ function closestTech(coordinates, x, startPoints, technicians) {
   }
 
   return closest;
-}
-
-//
-// K means clustering with evenly distributed start points
-// Faster but less accurate
-//
-
-function groupEvenlySpreadKMean(coordinates, max, n) {
-  const { groups, technicians, added } = initialSetUp(coordinates, n);
-
-  const startPoints = getEvenStarts(coordinates, n, groups, added);
-
-  // edge case handling, may end up as legacy
-  if (max === 1) {
-    return {
-      groups,
-      travels: technicians.map((tech) => tech.travel),
-      initialTravels: technicians.map((tech) => tech.initialTravel),
-    };
-  }
-
-  coordinates.forEach((coor, i) => {
-    if (added[i]) return;
-    const index = closestTech(coordinates, i, startPoints, technicians);
-    if (index === -1) return;
-    groups[index].push(coor);
-    added[i] = true;
-    technicians[index].maxCap = groups[index].length >= max;
-  });
-  added.forEach((el, i) => {
-    if (!el) {
-      groups[n].push(coordinates[i]);
-    }
-  });
-
-  return {
-    groups,
-    travels: technicians.map((tech) => tech.travel),
-    initialTravels: technicians.map((tech) => tech.initialTravel),
-  };
-}
-
-function getEvenStarts(coordinates, n, groups, added) {
-  // O(n)
-  const { width, height, leftmost, topmost } = getBoundaries(coordinates);
-
-  const res = [];
-
-  // O(n / log n)
-  let num = n;
-  let x = Math.ceil(Math.sqrt(n));
-  const rows = [];
-  while (num > 0) {
-    let i = Math.min(x, num);
-    rows.push(i);
-    num -= i;
-  }
-  let av = (rows[0] + rows.at(-1)) / 2;
-  rows[0] = Math.ceil(av);
-  rows[rows.length - 1] = Math.floor(av);
-
-  let yIncrement = height / (2 * rows.length);
-  // O(number of technicians * n)
-  rows.forEach((row, i) => {
-    let xIncrement = width / (2 * row);
-    [...Array(row)].forEach((_, j) => {
-      let coor = [
-        leftmost + (2 * j + 1) * xIncrement,
-        topmost + (2 * i + 1) * yIncrement,
-      ];
-      const x = getClosestJob(coor, coordinates, added);
-      if (x === -1) return;
-      added[x] = true;
-      groups[i * row + j].push(coordinates[x]);
-      res.push(x);
-    });
-  });
-  return res;
-}
-
-// O(n)
-function getBoundaries(coordinates) {
-  const xCoords = coordinates.map((coord) => coord[0]);
-  const leftmost = Math.min(...xCoords);
-  const rightmost = Math.max(...xCoords);
-
-  const yCoords = coordinates.map((coord) => coord[1]);
-  const topmost = Math.min(...yCoords);
-  const bottommost = Math.max(...yCoords);
-
-  const width = rightmost - leftmost;
-  const height = bottommost - topmost;
-
-  return { width, height, leftmost, topmost };
-}
-
-// O(n)
-function getClosestJob(curLocation, coordinates, added) {
-  let minDistance = Number.MAX_SAFE_INTEGER;
-  const closestIndex = coordinates.reduce((minIndex, coordinate, i) => {
-    if (added[i]) return minIndex;
-    let curDistance = getDistance(curLocation, coordinate);
-    if (curDistance < minDistance) {
-      minDistance = curDistance;
-      return i;
-    } else {
-      return minIndex;
-    }
-  }, -1);
-  if (closestIndex === -1) {
-    return -1;
-  }
-  added[closestIndex] = true;
-  return closestIndex;
 }
