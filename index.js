@@ -1006,14 +1006,14 @@ function visualiseCoordinates(coordinates, groups, parent, startPoints) {
 
     for (let j = 0; j <= y; j++) {
       const cell = document.createElement("td");
-      cell.textContent = `${j}, ${i}, ${weightArr[i][j]}`;
+      cell.textContent = `${j} ${i} ${weightArr[i][j]}`;
       cell.style.textAlign = "center";
       cell.style.backgroundColor = colors[groupArr[i][j]];
       cell.style.color = startArr[i][j] ? "black" : "gray";
       cell.style.fontWeight = startArr[i][j] ? "bold" : "";
 
       cell.style.border = "solid 1px black";
-      cell.style.fontSize = "11px";
+      cell.style.fontSize = "13px";
       row.appendChild(cell);
     }
     table.appendChild(row);
