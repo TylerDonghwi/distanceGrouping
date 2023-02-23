@@ -1596,13 +1596,8 @@ const tests = [
   ],
 ];
 const meths = [
-  // // groupCenterBFS,
-  // // groupCornerBFS,
-  // // groupCenterDFS,
-  // groupCornerDFS,
-  // // groupCornerDFSRange,
-  // groupRandomKMean,
-  groupFindMin,
+  // groupFindMin,
+  groupEvenlySpreadKMean,
 ];
 
 console.time("timer");
@@ -1721,69 +1716,24 @@ function generateTests() {
   console.log("[" + tests.join("], [") + "]");
 }
 function test(tests) {
-  // tests.forEach((coor, i) => {
-  //   meths.forEach((meth) => display(coor, i, 4, 8, meth));
-  //   document.body.appendChild(document.createElement("br"));
-  // });
+  tests.forEach((coor, i) => {
+    meths.forEach((meth) => display(coor, i, 4, 8, meth));
+    document.body.appendChild(document.createElement("br"));
+  });
 
   // const sum = tests.reduce((sum, coor, i) => {
   //   document.body.appendChild(document.createElement("br"));
   //   return sum + display(tests[0], 0, 4, 8, meths[0]);
   // }, 0);
   // console.log(sum / tests.length);
-  display(tests[0], 0, 4, 8, meths[0]);
-  // meths.forEach((meth) => display(tests[0], 0, 4, 8, meth));
+
+  // display(tests[0], 0, 4, 8, meths[0]);
 }
 
 //
 // DISTANCE UTILITY FUNCTIONS
 //
-// O(n)
-function getClosestJob(technician, coordinates, added) {
-  let minDistance = Number.MAX_SAFE_INTEGER;
-  const closestIndex = coordinates.reduce((minIndex, coordinate, i) => {
-    if (added[i]) return minIndex;
-    let curDistance = getDistance(technician.curLocation, coordinate);
-    if (curDistance < minDistance) {
-      minDistance = curDistance;
-      return i;
-    } else {
-      return minIndex;
-    }
-  }, -1);
-  if (closestIndex === -1) {
-    return -1;
-  }
-  added[closestIndex] = true;
-  if (technician.travel === 0) {
-    technician.initialTravel = minDistance;
-  }
-  technician.travel += minDistance;
-  return closestIndex;
-}
-// O(n)
-function getFurthestJob(technician, coordinates, added) {
-  let maxDistance = Number.MIN_SAFE_INTEGER;
-  const furthestIndex = coordinates.reduce((maxIndex, coordinate, i) => {
-    if (added[i]) return maxIndex;
-    let curDistance = getDistance(technician.curLocation, coordinate);
-    if (curDistance > maxDistance) {
-      maxDistance = curDistance;
-      return i;
-    } else {
-      return maxIndex;
-    }
-  }, -1);
-  if (furthestIndex === -1) {
-    return -1;
-  }
-  added[furthestIndex] = true;
-  if (technician.travel === 0) {
-    technician.initialTravel = maxDistance;
-  }
-  technician.travel += maxDistance;
-  return furthestIndex;
-}
+
 // O(1)
 function getDistance(a, b) {
   return Math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2);
@@ -1831,48 +1781,13 @@ function getXY(coordinates) {
 // Assigning Functions
 //
 
-// O(n^2)
-// DFS
-// Start furthest from the center
-// cons the later vans need to travel more
-function groupCornerDFS(coordinates, max, n) {
-  const { m, groups, technicians, added } = initialSetUp(coordinates, n);
-  max = m > max * n ? max : Math.ceil(m / n);
-
-  let counter = 0;
-  let curTech = 0;
-
-  while (counter < m && curTech < n) {
-    const i = getFurthestJob(technicians[curTech], coordinates, added);
-    groups[curTech].push(coordinates[i]);
-    technicians[curTech].curLocation = coordinates[i];
-    counter++;
-
-    while (groups[curTech].length < max && counter < m) {
-      const i = getClosestJob(technicians[curTech], coordinates, added);
-      groups[curTech].push(coordinates[i]);
-      technicians[curTech].curLocation = coordinates[i];
-      counter++;
-    }
-    curTech++;
-  }
-  added.forEach((el, i) => {
-    if (!el) {
-      groups[n].push(coordinates[i]);
-    }
-  });
-
-  return {
-    groups,
-    travels: technicians.map((tech) => tech.travel),
-    initialTravels: technicians.map((tech) => tech.initialTravel),
-  };
-}
+// K means clustering
+// RUNTIME: O(number of iterations * number of jobs * number of technicians)
 
 // Iterating multiple times to find the best K-means cluster
 function groupFindMin(coordinates, max, n) {
-  let res = groupRandomKMean(coordinates, max, n);
-  let minTravel = res.travels.reduce((sum, travel) => sum + travel, 0);
+  let res;
+  let minTravel = Number.MAX_SAFE_INTEGER;
 
   for (let i = 0; i < 10000; i++) {
     const cur = groupRandomKMean(coordinates, max, n);
@@ -1949,4 +1864,99 @@ function closestTech(coordinates, x, startPoints, technicians) {
   }
 
   return closest;
+}
+
+function groupEvenlySpreadKMean(coordinates, max, n) {
+  const { groups, technicians, added } = initialSetUp(coordinates, n);
+
+  const startPoints = getEvenStarts(coordinates, n, groups);
+
+  // edge case handling, may end up as legacy
+  if (max === 1) {
+    return {
+      groups,
+      travels: technicians.map((tech) => tech.travel),
+      initialTravels: technicians.map((tech) => tech.initialTravel),
+    };
+  }
+
+  coordinates.forEach((coor, i) => {
+    if (added[i]) return;
+    const index = closestTech(coordinates, i, startPoints, technicians);
+    if (index === -1) return;
+    groups[index].push(coor);
+    added[i] = true;
+    technicians[index].maxCap = groups[index].length >= max;
+  });
+  added.forEach((el, i) => {
+    if (!el) {
+      groups[n].push(coordinates[i]);
+    }
+  });
+
+  return {
+    groups,
+    travels: technicians.map((tech) => tech.travel),
+    initialTravels: technicians.map((tech) => tech.initialTravel),
+  };
+}
+
+function getEvenStarts(coordinates, n, groups) {
+  // O(n)
+  const { width, height, leftmost, topmost } = getBoundaries(coordinates);
+  // console.log(width, height, leftmost, rightmost, topmost, bottommost);
+
+  const res = [];
+
+  // O(n / log n)
+  let num = n;
+  let x = Math.ceil(Math.sqrt(n));
+  const rows = [];
+  while (num > 0) {
+    let i = Math.min(x, num);
+    rows.push(i);
+    num -= i;
+  }
+  let av = (rows[0] + rows.at(-1)) / 2;
+  rows[0] = Math.ceil(av);
+  rows[rows.length - 1] = Math.floor(av);
+  // console.log(rows);
+
+  let yIncrement = height / (2 * rows.length);
+  // O(number of technicians * n)
+  rows.forEach((row, i) => {
+    let xIncrement = width / (2 * row);
+    [...Array(row)].forEach((_, j) => {
+      let coor = [
+        leftmost + (2 * j + 1) * xIncrement,
+        topmost + (2 * i + 1) * yIncrement,
+      ];
+      console.log(coor);
+      res.push(coor);
+    });
+  });
+  // console.log(res);
+  return [1];
+}
+
+function getBoundaries(coordinates) {
+  // const sum = coordinates.reduce(
+  //   (acc, curr) => [acc[0] + curr[0], acc[1] + curr[1]],
+  //   [0, 0]
+  // );
+
+  // const average = [sum[0] / coordinates.length, sum[1] / coordinates.length];
+
+  const xCoords = coordinates.map((coord) => coord[0]);
+  const leftmost = Math.min(...xCoords);
+  const rightmost = Math.max(...xCoords);
+
+  const yCoords = coordinates.map((coord) => coord[1]);
+  const topmost = Math.min(...yCoords);
+  const bottommost = Math.max(...yCoords);
+
+  const width = rightmost - leftmost;
+  const height = bottommost - topmost;
+
+  return { width, height, leftmost, topmost };
 }
