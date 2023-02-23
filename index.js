@@ -1,6 +1,6 @@
 const maxWeight = 8;
 const n = 8;
-const numIterations = 1000;
+const numIterations = 1;
 
 const colors = [
   "",
@@ -1663,6 +1663,7 @@ function groupRandomKMean(coordinates, max, n) {
     if (rand === -1) break;
     groups[i].push(coordinates[rand]);
     startPoints.push(rand);
+    technicians[i].weight += coordinates[rand][2];
   }
 
   coordinates.forEach((coor, i) => {
@@ -1673,6 +1674,7 @@ function groupRandomKMean(coordinates, max, n) {
     technicians[index].weight += coor[2];
     added[i] = true;
   });
+
   added.forEach((el, i) => {
     if (!el) {
       groups[n].push(coordinates[i]);
@@ -1688,11 +1690,8 @@ function groupRandomKMean(coordinates, max, n) {
 function closestTech(coordinates, x, startPoints, technicians) {
   const inits = startPoints.map((el) => coordinates[el]);
   let minDistance = Number.MAX_SAFE_INTEGER;
-
   const closest = inits.reduce((minIndex, init, i) => {
-    if (technicians[i].weight + coordinates[x][2] >= maxWeight) {
-      return minIndex;
-    }
+    if (technicians[i].weight + coordinates[x][2] > maxWeight) return minIndex;
 
     let curDistance = getDistance(init, coordinates[x]);
     if (curDistance < minDistance) {
