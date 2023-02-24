@@ -79,10 +79,11 @@ function display(coor, i, max, n) {
   const weights = groups.map((group) =>
     group.reduce((sum, coor) => sum + coor[2], 0)
   );
-
   groups
     .map((group) =>
-      group.map((element) => `[${element[0]}, ${element[1]}]`).join(", ")
+      group
+        .map((element) => `[${element.coor[0]}, ${element.coor[1]}]`)
+        .join(", ")
     )
     .forEach((group, i) => {
       addLi(
@@ -114,7 +115,13 @@ function visualiseCoordinates(coordinates, groups, parent, startPoints) {
     var icon = L.icon({
       iconUrl: `./image/"red".jpeg`,
       iconSize: [10, 10],
-      className: "marker-color-" + "green",
+      className:
+        "marker-color-" +
+        colors[
+          groups
+            .map((group) => group.map((el) => el.index))
+            .findIndex((group) => group.includes(i)) + 3
+        ],
     });
 
     const marker = L.marker([coor[0], coor[1]], { icon: icon }).addTo(mymap);
@@ -180,7 +187,7 @@ function getRandomKMean(coordinates, max, n) {
   for (let i = 0; i < n; i++) {
     const rand = getRandomJob(coordinates, added);
     if (rand === -1) break;
-    groups[i].push(coordinates[rand]);
+    groups[i].push({ coor: coordinates[rand], index: rand });
     startPoints.push(rand);
     technicians[i].weight += coordinates[rand][2];
   }
@@ -189,14 +196,14 @@ function getRandomKMean(coordinates, max, n) {
     if (added[i]) return;
     const index = closestTech(coordinates, i, startPoints, technicians, max);
     if (index === -1) return;
-    groups[index].push(coor);
+    groups[index].push({ coor, index: i });
     technicians[index].weight += coor[2];
     added[i] = true;
   });
 
   added.forEach((el, i) => {
     if (!el) {
-      groups[n].push(coordinates[i]);
+      groups[n].push({ coor: coordinates[i], index: n });
     }
   });
 
