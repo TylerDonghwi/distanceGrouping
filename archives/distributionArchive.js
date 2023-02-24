@@ -97,7 +97,7 @@ function getBoundaries(coordinates) {
   const width = rightmost - leftmost;
   const height = bottommost - topmost;
 
-  return { width, height, leftmost, topmost };
+  return { width, height, leftmost,rightmost, topmost, bottommost };
 }
 
 // O(n)

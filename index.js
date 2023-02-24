@@ -1,14 +1,17 @@
 const maxWeight = 8;
 const n = 10;
-const numIterations = 1000;
+const numIterations = 1;
 
 const colors = [
   "",
   "lightgray",
   "black",
+  "red",
   "orange",
   "yellow",
   "green",
+  "blue",
+  "purple",
   "pink",
   "cyan",
   "brown",
@@ -22,18 +25,12 @@ const colors = [
 const tests = [
   [
     [-36.9020038, 174.7578935, Math.floor(Math.random() * 4) + 1],
-    [-41.2911729, 174.7970831, Math.floor(Math.random() * 4) + 1],
-    [-43.5151538, 172.6479433, Math.floor(Math.random() * 4) + 1],
     [-36.8818618, 174.750201, Math.floor(Math.random() * 4) + 1],
     [-36.7942876, 174.6605501, Math.floor(Math.random() * 4) + 1],
     [-36.902283, 174.8396365, Math.floor(Math.random() * 4) + 1],
     [-36.8948571, 174.8153186, Math.floor(Math.random() * 4) + 1],
-    [-41.1539607, 174.9809583, Math.floor(Math.random() * 4) + 1],
-    [-41.22773400000001, 174.8807125, Math.floor(Math.random() * 4) + 1],
-    [-41.3187241, 174.8216688, Math.floor(Math.random() * 4) + 1],
     [-36.8720438, 174.609816, Math.floor(Math.random() * 4) + 1],
     [-36.8720438, 174.609816, Math.floor(Math.random() * 4) + 1],
-    [-41.2089077, 174.9056448, Math.floor(Math.random() * 4) + 1],
     [-36.880712, 174.7513683, Math.floor(Math.random() * 4) + 1],
     [-36.812286, 174.6346072, Math.floor(Math.random() * 4) + 1],
     [-36.8230079, 174.6352204, Math.floor(Math.random() * 4) + 1],
@@ -41,7 +38,6 @@ const tests = [
     [-36.9237037, 174.7949032, Math.floor(Math.random() * 4) + 1],
     [-36.9683935, 174.8324668, Math.floor(Math.random() * 4) + 1],
     [-36.903619, 174.7634011, Math.floor(Math.random() * 4) + 1],
-    [-43.5415986, 172.5804111, Math.floor(Math.random() * 4) + 1],
     [-36.9232304, 174.8302906, Math.floor(Math.random() * 4) + 1],
     [-36.9255603, 174.7847758, Math.floor(Math.random() * 4) + 1],
     [-36.8681201, 174.6987089, Math.floor(Math.random() * 4) + 1],
@@ -56,7 +52,6 @@ const tests = [
     [-36.9032209, 174.6574038, Math.floor(Math.random() * 4) + 1],
     [-36.9224744, 174.7511624, Math.floor(Math.random() * 4) + 1],
     [-36.9120967, 174.7494903, Math.floor(Math.random() * 4) + 1],
-    [-43.51627209999999, 172.6166238, Math.floor(Math.random() * 4) + 1],
   ],
 ];
 console.time("timer");
@@ -68,8 +63,7 @@ function display(coor, i, max, n) {
   const parent = document.createElement("div");
 
   const { groups, travels, startPoints } = kMeanCluster(coor, max, n);
-
-  // visualiseCoordinates(coor, groups, parent, startPoints);
+  visualiseCoordinates(coor, groups, parent, startPoints);
 
   const ul = document.createElement("ul");
   addLi(ul, `Index: ${i}, NumJobs: ${coor.length}`);
@@ -94,16 +88,13 @@ function display(coor, i, max, n) {
       addLi(
         ul,
         i === groups.length - 1
-          ? `overflow: 0, ${group ? group : "None Assigned"}`
-          : `${colors[i + 3]}: t: ${Math.floor(travels[i])}, w: ${
-              weights[i]
-            }, ${group}`
+          ? `overflow: ${group ? group : "None Assigned"}`
+          : `${colors[i + 3]}: t: ${travels[i]}, w: ${weights[i]}, ${group}`
       );
     });
 
-  const totalTravel = Math.floor(
-    travels.reduce((total, travel) => total + travel, 0)
-  );
+  const totalTravel = travels.reduce((total, travel) => total + travel, 0);
+
   addLi(ul, "");
   addLi(ul, `Total Travel: ${totalTravel}`);
 
@@ -112,50 +103,25 @@ function display(coor, i, max, n) {
   return totalTravel;
 }
 function visualiseCoordinates(coordinates, groups, parent, startPoints) {
-  const [y, x] = getXY(coordinates);
+  var mymap = L.map("mapid").setView([-36.9020038, 174.7578935], 10);
 
-  const groupArr = Array.from({ length: x + 1 }, () =>
-    new Array(y + 1).fill(0)
-  );
-  const weightArr = Array.from({ length: x + 1 }, () =>
-    new Array(y + 1).fill(0)
-  );
-  const startArr = Array.from({ length: x + 1 }, () =>
-    new Array(y + 1).fill(0)
-  );
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    attribution:
+      'Map data © <a href="https://openstreetmap.org">OpenStreetMap</a> contributors',
+  }).addTo(mymap);
 
-  coordinates.forEach((coordinate, i) => {
-    groupArr[coordinate[1]][coordinate[0]] = 1;
-    weightArr[coordinate[1]][coordinate[0]] = coordinate[2];
-    startArr[coordinate[1]][coordinate[0]] = startPoints.includes(i);
-  });
-
-  groups.forEach((group, i) => {
-    group.forEach((location) => {
-      groupArr[location[1]][location[0]] = i === groups.length - 1 ? 1 : i + 3;
+  coordinates.forEach((coor, i) => {
+    var icon = L.icon({
+      iconUrl: `./image/"red".jpeg`,
+      iconSize: [10, 10],
+      className: "marker-color-" + "green",
     });
+
+    const marker = L.marker([coor[0], coor[1]], { icon: icon }).addTo(mymap);
   });
 
-  const table = document.createElement("table");
-
-  for (let i = 0; i <= x; i++) {
-    const row = document.createElement("tr");
-
-    for (let j = 0; j <= y; j++) {
-      const cell = document.createElement("td");
-      cell.textContent = `${j} ${i} ${weightArr[i][j]}`;
-      cell.style.textAlign = "center";
-      cell.style.backgroundColor = colors[groupArr[i][j]];
-      cell.style.color = startArr[i][j] ? "black" : "gray";
-      cell.style.fontWeight = startArr[i][j] ? "bold" : "";
-
-      cell.style.border = "solid 1px black";
-      cell.style.fontSize = "13px";
-      row.appendChild(cell);
-    }
-    table.appendChild(row);
-  }
-  parent.appendChild(table);
+  // display the startPoint
+  // Separate by groups
 }
 function addLi(parent, text) {
   const li = document.createElement("li");
@@ -241,12 +207,10 @@ function getRandomKMean(coordinates, max, n) {
   };
 }
 function initialSetUp(coordinates, n) {
-  const [y, x] = getXY(coordinates);
   const m = coordinates.length;
   const groups = Array.from(Array(n + 1), () => []);
   const technicians = Array.from(Array(n), () => {
     return {
-      curLocation: [Math.floor(y / 2), Math.floor(x / 2)],
       travel: 0,
       weight: 0,
     };
