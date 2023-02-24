@@ -58,21 +58,8 @@ const tests = [
 
 // Runner
 console.time("timer");
-tests.forEach((test, i) => display(test, i, maxWeight, n));
+display(tests[0], 0, maxWeight, n);
 console.timeEnd("timer");
-
-// Test case generator
-function generateTests() {
-  const coordinates = [];
-  let size = Math.random() * 30 + 10;
-  for (let i = 0; i < size; i++) {
-    let x = (Math.random() * 180 - 90).toFixed(7);
-    let y = (Math.random() * 360).toFixed(7);
-    let z = Math.floor(Math.random() * 4) + 1;
-    coordinates.push([x, y, z]);
-  }
-  console.log("[" + coordinates.join("], [") + "]");
-}
 
 // Display
 function display(coor, i, max, n) {
@@ -141,9 +128,6 @@ function visualiseCoordinates(coordinates, groups, parent, startPoints) {
 
     const marker = L.marker([coor[0], coor[1]], { icon: icon }).addTo(mymap);
   });
-
-  // display the startPoint
-  // Separate by groups
 }
 function addLi(parent, text) {
   const li = document.createElement("li");
