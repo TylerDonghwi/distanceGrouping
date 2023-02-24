@@ -1,6 +1,6 @@
 const maxWeight = 8;
 const n = 10;
-const numIterations = 1;
+const numIterations = 10000;
 
 const colors = [
   "",
