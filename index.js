@@ -25,34 +25,34 @@ const colors = [
 const tests = [
   // test coordinates, the third value is the weight of the job randomly assigned
   [
-    [-36.9020038, 174.7578935, Math.floor(Math.random() * 4) + 1],
-    [-36.8818618, 174.750201, Math.floor(Math.random() * 4) + 1],
-    [-36.7942876, 174.6605501, Math.floor(Math.random() * 4) + 1],
-    [-36.902283, 174.8396365, Math.floor(Math.random() * 4) + 1],
-    [-36.8948571, 174.8153186, Math.floor(Math.random() * 4) + 1],
-    [-36.8720438, 174.609816, Math.floor(Math.random() * 4) + 1],
-    [-36.8720438, 174.609816, Math.floor(Math.random() * 4) + 1],
-    [-36.880712, 174.7513683, Math.floor(Math.random() * 4) + 1],
-    [-36.812286, 174.6346072, Math.floor(Math.random() * 4) + 1],
-    [-36.8230079, 174.6352204, Math.floor(Math.random() * 4) + 1],
-    [-36.9201965, 174.7860347, Math.floor(Math.random() * 4) + 1],
-    [-36.9237037, 174.7949032, Math.floor(Math.random() * 4) + 1],
-    [-36.9683935, 174.8324668, Math.floor(Math.random() * 4) + 1],
-    [-36.903619, 174.7634011, Math.floor(Math.random() * 4) + 1],
-    [-36.9232304, 174.8302906, Math.floor(Math.random() * 4) + 1],
-    [-36.9255603, 174.7847758, Math.floor(Math.random() * 4) + 1],
-    [-36.8681201, 174.6987089, Math.floor(Math.random() * 4) + 1],
-    [-36.9985805, 174.8727487, Math.floor(Math.random() * 4) + 1],
-    [-36.895712, 174.6255309, Math.floor(Math.random() * 4) + 1],
-    [-37.0517898, 174.8631455, Math.floor(Math.random() * 4) + 1],
-    [-36.9232304, 174.8302906, Math.floor(Math.random() * 4) + 1],
-    [-36.8953169, 174.68107, Math.floor(Math.random() * 4) + 1],
-    [-36.868632, 174.7113698, Math.floor(Math.random() * 4) + 1],
-    [-36.8882769, 174.6735535, Math.floor(Math.random() * 4) + 1],
-    [-36.7255477, 174.7449787, Math.floor(Math.random() * 4) + 1],
-    [-36.9032209, 174.6574038, Math.floor(Math.random() * 4) + 1],
-    [-36.9224744, 174.7511624, Math.floor(Math.random() * 4) + 1],
-    [-36.9120967, 174.7494903, Math.floor(Math.random() * 4) + 1],
+    [-36.9020038, 174.7578935, 1],
+    [-36.8818618, 174.750201, 1],
+    [-36.7942876, 174.6605501, 1],
+    [-36.902283, 174.8396365, 1],
+    [-36.8948571, 174.8153186, 1],
+    [-36.8720438, 174.609816, 1],
+    [-36.8720438, 174.609816, 1],
+    [-36.880712, 174.7513683, 1],
+    [-36.812286, 174.6346072, 2],
+    [-36.8230079, 174.6352204, 2],
+    [-36.9201965, 174.7860347, 2],
+    [-36.9237037, 174.7949032, 2],
+    [-36.9683935, 174.8324668, 2],
+    [-36.903619, 174.7634011, 2],
+    [-36.9232304, 174.8302906, 2],
+    [-36.9255603, 174.7847758, 2],
+    [-36.8681201, 174.6987089, 2],
+    [-36.9985805, 174.8727487, 3],
+    [-36.895712, 174.6255309, 3],
+    [-37.0517898, 174.8631455, 3],
+    [-36.9232304, 174.8302906, 3],
+    [-36.8953169, 174.68107, 4],
+    [-36.868632, 174.7113698, 4],
+    [-36.8882769, 174.6735535, 4],
+    [-36.7255477, 174.7449787, 4],
+    [-36.9032209, 174.6574038, 4],
+    [-36.9224744, 174.7511624, 4],
+    [-36.9120967, 174.7494903, 3],
   ],
 ];
 
@@ -61,12 +61,25 @@ console.time("timer");
 tests.forEach((test, i) => display(test, i, maxWeight, n));
 console.timeEnd("timer");
 
+// Test case generator
+function generateTests() {
+  const coordinates = [];
+  let size = Math.random() * 30 + 10;
+  for (let i = 0; i < size; i++) {
+    let x = (Math.random() * 180 - 90).toFixed(7);
+    let y = (Math.random() * 360).toFixed(7);
+    let z = Math.floor(Math.random() * 4) + 1;
+    coordinates.push([x, y, z]);
+  }
+  console.log("[" + coordinates.join("], [") + "]");
+}
+
 // Display
 function display(coor, i, max, n) {
   const parent = document.createElement("div");
 
-  const { groups, travels, startPoints } = kMeanCluster(coor, max, n);
-  visualiseCoordinates(coor, groups, parent, startPoints);
+  const { groups, travels } = kMeanCluster(coor, max, n);
+  visualiseCoordinates(coor, groups, parent);
 
   // display info below the map
   const ul = document.createElement("ul");
@@ -114,7 +127,7 @@ function visualiseCoordinates(coordinates, groups, parent, startPoints) {
   }).addTo(mymap);
 
   coordinates.forEach((coor, i) => {
-    var icon = L.icon({
+    let icon = L.icon({
       iconUrl: `./image/"red".jpeg`,
       iconSize: [10, 10],
       className:
@@ -195,7 +208,6 @@ function getRandomKMean(coordinates, max, n) {
   // return values for display
   return {
     groups,
-    startPoints,
     travels: technicians.map((tech) => tech.travel),
   };
 }
