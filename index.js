@@ -1,5 +1,5 @@
 const maxWeight = 8;
-const n = 10;
+const n = 10; // number of technicians
 const numIterations = 10000;
 
 const colors = [
@@ -23,6 +23,7 @@ const colors = [
   "thistle",
 ];
 const tests = [
+  // test coordinates, the third value is the weight of the job randomly assigned
   [
     [-36.9020038, 174.7578935, Math.floor(Math.random() * 4) + 1],
     [-36.8818618, 174.750201, Math.floor(Math.random() * 4) + 1],
@@ -54,17 +55,20 @@ const tests = [
     [-36.9120967, 174.7494903, Math.floor(Math.random() * 4) + 1],
   ],
 ];
+
+// Runner
 console.time("timer");
-test(tests);
+tests.forEach((test, i) => display(test, i, maxWeight, n));
 console.timeEnd("timer");
 
-// Display Zone
+// Display
 function display(coor, i, max, n) {
   const parent = document.createElement("div");
 
   const { groups, travels, startPoints } = kMeanCluster(coor, max, n);
   visualiseCoordinates(coor, groups, parent, startPoints);
 
+  // display info below the map
   const ul = document.createElement("ul");
   addLi(ul, `Index: ${i}, NumJobs: ${coor.length}`);
   addLi(ul, `MaxCap: ${max}, Num Technicians: ${n}`);
@@ -77,7 +81,7 @@ function display(coor, i, max, n) {
   addLi(ul, "");
 
   const weights = groups.map((group) =>
-    group.reduce((sum, coor) => sum + coor[2], 0)
+    group.reduce((sum, coor) => sum + coor.coor[2], 0)
   );
   groups
     .map((group) =>
@@ -93,7 +97,6 @@ function display(coor, i, max, n) {
           : `${colors[i + 3]}: t: ${travels[i]}, w: ${weights[i]}, ${group}`
       );
     });
-
   const totalTravel = travels.reduce((total, travel) => total + travel, 0);
 
   addLi(ul, "");
@@ -101,7 +104,6 @@ function display(coor, i, max, n) {
 
   parent.appendChild(ul);
   document.body.appendChild(parent);
-  return totalTravel;
 }
 function visualiseCoordinates(coordinates, groups, parent, startPoints) {
   var mymap = L.map("mapid").setView([-36.9020038, 174.7578935], 10);
@@ -136,29 +138,6 @@ function addLi(parent, text) {
   parent.appendChild(li);
 }
 
-//
-// Testing Zone
-//
-function generateTests() {
-  const tests = [];
-  for (let i = 0; i < 20; i++) {
-    const coordinates = [];
-
-    let size = Math.random() * 30 + 30;
-    for (let i = 0; i < size; i++) {
-      let x = Math.floor(Math.random() * 40);
-      let y = Math.floor(Math.random() * 40);
-      let z = Math.floor(Math.random() * 4) + 1;
-      coordinates.push([x, y, z]);
-    }
-    tests.push("[" + coordinates.join("], [") + "]");
-  }
-  console.log("[" + tests.join("], [") + "]");
-}
-function test(tests) {
-  tests.forEach((test, i) => display(test, i, maxWeight, n));
-}
-
 // K means clustering with x iterations with randomly chosen coordinates
 // RUNTIME: O(number of iterations * number of jobs * number of technicians)
 
@@ -167,6 +146,7 @@ function kMeanCluster(coordinates, max, n) {
   let res;
   let minTravel = Number.MAX_SAFE_INTEGER;
 
+  // find the iteration with the lowest total travel within the group
   for (let i = 0; i < numIterations; i++) {
     const cur = getRandomKMean(coordinates, max, n);
     let curTravel = cur.travels.reduce((sum, travel) => sum + travel, 0);
@@ -184,29 +164,35 @@ function getRandomKMean(coordinates, max, n) {
 
   const startPoints = [];
 
+  // randomly select start points
   for (let i = 0; i < n; i++) {
     const rand = getRandomJob(coordinates, added);
-    if (rand === -1) break;
+    if (rand === -1) break; // break if the number of jobs is less than the number of technicians
+
     groups[i].push({ coor: coordinates[rand], index: rand });
     startPoints.push(rand);
     technicians[i].weight += coordinates[rand][2];
   }
 
+  // iterate the rest of jobs and assign it to the cloest available technician
   coordinates.forEach((coor, i) => {
-    if (added[i]) return;
-    const index = closestTech(coordinates, i, startPoints, technicians, max);
+    if (added[i]) return; // don't reassign the jobs that were initially assigned
+
+    const index = getClosestTech(coordinates, i, startPoints, technicians, max);
     if (index === -1) return;
     groups[index].push({ coor, index: i });
     technicians[index].weight += coor[2];
     added[i] = true;
   });
 
+  // add all the unadded jobs to overflow
   added.forEach((el, i) => {
     if (!el) {
       groups[n].push({ coor: coordinates[i], index: n });
     }
   });
 
+  // return values for display
   return {
     groups,
     startPoints,
@@ -215,28 +201,18 @@ function getRandomKMean(coordinates, max, n) {
 }
 function initialSetUp(coordinates, n) {
   const m = coordinates.length;
-  const groups = Array.from(Array(n + 1), () => []);
+  const groups = Array.from(Array(n + 1), () => []); // each element represents a cluster
   const technicians = Array.from(Array(n), () => {
     return {
       travel: 0,
       weight: 0,
     };
   });
-  const added = [...Array(m)].map(() => false);
+  const added = [...Array(m)].map(() => false); // used to prevent duplicate jobs from being assigned twice
   return { m, groups, technicians, added };
 }
-// Returns the range of area that the coordinates are located
-function getXY(coordinates) {
-  return coordinates.reduce(
-    (max, coordinate) => {
-      return [Math.max(max[0], coordinate[0]), Math.max(max[1], coordinate[1])];
-    },
-    [0, 0]
-  );
-}
-
 function getRandomJob(coordinates, added) {
-  if (added.every((el) => el)) return -1;
+  if (added.every((el) => el)) return -1; // if there is no unadded jobs return
 
   let rand = Math.floor(Math.random() * coordinates.length);
   while (added[rand]) {
@@ -245,7 +221,7 @@ function getRandomJob(coordinates, added) {
   added[rand] = true;
   return rand;
 }
-function closestTech(coordinates, x, startPoints, technicians, max) {
+function getClosestTech(coordinates, x, startPoints, technicians, max) {
   const inits = startPoints.map((el) => coordinates[el]);
   let minDistance = Number.MAX_SAFE_INTEGER;
 
